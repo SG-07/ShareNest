@@ -1,0 +1,148 @@
+{
+  "info": {
+    "name": "ShareNest API",
+    "_postman_id": "c1d5a0c0-3d7a-4a1c-9b6a-3a0d3f1b4f9c",
+    "description": "Sample collection for the ShareNest REST API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "http://localhost:8080/api/auth/register", "host": ["localhost"], "port": "8080", "path": ["api","auth","register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john_doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"P@ssw0rd123\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "http://localhost:8080/api/auth/login", "host": ["localhost"], "port": "8080", "path": ["api","auth","login"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john_doe\",\n  \"password\": \"P@ssw0rd123\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Store JWT in environment for subsequent requests",
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  pm.environment.set(\"jwt\", json.token);",
+                  "} else {",
+                  "  console.log('Login failed');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Items",
+      "item": [
+        {
+          "name": "Create Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "http://localhost:8080/api/items", "host": ["localhost"], "port": "8080", "path": ["api","items"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Electric Drill\",\n  \"description\": \"High torque cordless drill\",\n  \"sku\": \"DRILL-123\",\n  \"category\": \"Power Tools\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "http://localhost:8080/api/items", "host": ["localhost"], "port": "8080", "path": ["api","items"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Borrow Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "http://localhost:8080/api/items/1/borrow", "host": ["localhost"], "port": "8080", "path": ["api","items","1","borrow"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Return Item",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "http://localhost:8080/api/items/1/return", "host": ["localhost"], "port": "8080", "path": ["api","items","1","return"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "item": [
+        {
+          "name": "Submit Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "http://localhost:8080/api/feedback", "host": ["localhost"], "port": "8080", "path": ["api","feedback"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"borrowerId\": 2,\n  \"ownerId\": 1,\n  \"itemId\": 1,\n  \"rating\": 5,\n  \"comment\": \"Great condition, very useful.\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Feedback for Item",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{jwt}}" }
+            ],
+            "url": { "raw": "http://localhost:8080/api/items/1/feedback", "host": ["localhost"], "port": "8080", "path": ["api","items","1","feedback"] }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
