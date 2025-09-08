@@ -1,4 +1,4 @@
-package com.gangwarsatyam.sharenest.config;
+package com.gangwarsatyam.sharenest.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

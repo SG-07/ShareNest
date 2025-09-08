@@ -1,18 +1,24 @@
 package com.gangwarsatyam.sharenest.config;
 
+import com.gangwarsatyam.sharenest.model.User;
+import com.gangwarsatyam.sharenest.security.JwtProvider;
+import com.gangwarsatyam.sharenest.repository.UserRepository;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import com.gangwarsatyam.sharenest.repository.UserRepository;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 @RequiredArgsConstructor
@@ -30,17 +36,27 @@ public class JwtFilter extends OncePerRequestFilter {
             String token = getJwtFromRequest(request);
             if (StringUtils.hasText(token) && jwtProvider.validate(token)) {
                 String username = jwtProvider.getUsername(token);
-                User user = userRepository.findByUsername(username)
+
+                // ✅ Explicitly use your entity (avoids clash with Spring Security's User)
+                com.gangwarsatyam.sharenest.model.User user = userRepository.findByUsername(username)
                         .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                        new UsernamePasswordAuthenticationToken(
+                                user,
+                                null,
+                                user.getAuthorities() // works because your entity implements UserDetails
+                        );
+
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                logger.debug("Authenticated user {}", username);
+
+                logger.debug("[JwtFilter] Authenticated user {}", username);
             }
         } catch (Exception ex) {
-            logger.error("Could not set user authentication in security context", ex);
+            logger.error("[JwtFilter] Could not set user authentication in security context", ex);
         }
+
         filterChain.doFilter(request, response);
     }
 
