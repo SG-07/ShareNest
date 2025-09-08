@@ -1,6 +1,5 @@
 package com.gangwarsatyam.sharenest.exception;
 
-import com.shrnest.exception.ServiceException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.http.HttpStatus;
@@ -10,10 +9,8 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -44,6 +41,9 @@ public class GlobalExceptionHandler {
         HttpStatus status = HttpStatus.resolve(ex.getStatusCode());
         if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
 
+        // Debug log
+        System.out.println("[GlobalExceptionHandler] ServiceException: " + ex.getMessage());
+
         ErrorResponse err = new ErrorResponse(
                 Instant.now(),
                 status.value(),
@@ -73,6 +73,9 @@ public class GlobalExceptionHandler {
                         (existing, replacement) -> existing
                 ));
 
+        // Debug log
+        System.out.println("[GlobalExceptionHandler] Validation failed: " + errors);
+
         ErrorResponse err = new ErrorResponse(
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -93,6 +96,9 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException ex,
             org.springframework.web.context.request.WebRequest request) {
 
+        // Debug log
+        System.out.println("[GlobalExceptionHandler] Malformed JSON: " + ex.getMessage());
+
         ErrorResponse err = new ErrorResponse(
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
@@ -109,8 +115,13 @@ public class GlobalExceptionHandler {
      * Fallback for any unhandled exception.
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleAll(Exception ex,
-                                                   org.springframework.web.context.request.WebRequest request) {
+    public ResponseEntity<ErrorResponse> handleAll(
+            Exception ex,
+            org.springframework.web.context.request.WebRequest request) {
+
+        // Debug log
+        System.out.println("[GlobalExceptionHandler] Unhandled exception: " + ex);
+
         ErrorResponse err = new ErrorResponse(
                 Instant.now(),
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -120,8 +131,7 @@ public class GlobalExceptionHandler {
                 "INTERNAL_ERROR",
                 null);
 
-        // Optionally log the stack trace here
-        ex.printStackTrace();
+        ex.printStackTrace(); // keep for now, swap with proper logger later
 
         return new ResponseEntity<>(err, HttpStatus.INTERNAL_SERVER_ERROR);
     }

@@ -2,6 +2,8 @@ package com.gangwarsatyam.sharenest.service;
 
 import com.gangwarsatyam.sharenest.dto.ItemDto;
 import com.gangwarsatyam.sharenest.dto.ItemResponse;
+import com.gangwarsatyam.sharenest.model.User;
+import com.gangwarsatyam.sharenest.model.Item;
 import com.gangwarsatyam.sharenest.repository.ItemRepository;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

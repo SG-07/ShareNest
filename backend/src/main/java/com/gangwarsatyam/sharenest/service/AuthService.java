@@ -1,11 +1,14 @@
 package com.gangwarsatyam.sharenest.service;
 
+import com.gangwarsatyam.sharenest.exception.ServiceException;
+import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -17,9 +20,14 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public User register(String username, String password, String email, String name) {
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new RuntimeException("Username already taken");
+        if (userRepository.existsByEmail(email)) {
+            throw new ServiceException(
+                    "Email already registered",
+                    409,
+                    "EMAIL_ALREADY_EXISTS"
+            );
         }
+
         User user = User.builder()
                 .username(username)
                 .password(passwordEncoder.encode(password))
@@ -27,16 +35,29 @@ public class AuthService {
                 .name(name)
                 .roles(List.of("ROLE_USER"))
                 .build();
+
         return userRepository.save(user);
     }
 
-    public void authenticate(String username, String password) {
+    public void authenticate(String email, String password) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ServiceException(
+                        "User not found with email: " + email,
+                        404,
+                        "USER_NOT_FOUND"
+                ));
+
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password));
+                new UsernamePasswordAuthenticationToken(user.getUsername(), password)
+        );
     }
 
-    public User findByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ServiceException(
+                        "User not found with email: " + email,
+                        404,
+                        "USER_NOT_FOUND"
+                ));
     }
 }

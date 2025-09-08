@@ -2,7 +2,9 @@ package com.gangwarsatyam.sharenest.controller;
 
 import com.gangwarsatyam.sharenest.dto.ItemDto;
 import com.gangwarsatyam.sharenest.dto.ItemResponse;
+import com.gangwarsatyam.sharenest.model.User;          // ✅ import your entity
 import com.gangwarsatyam.sharenest.service.ItemService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,7 +37,8 @@ public class ItemController {
     public ResponseEntity<ItemResponse> addItem(
             @Valid @ModelAttribute ItemDto dto,
             @RequestPart("image") MultipartFile image,
-            @AuthenticationPrincipal User owner) throws IOException {
+            @AuthenticationPrincipal User owner   // ✅ use your entity
+    ) throws IOException {
 
         ItemResponse saved = itemService.addItem(dto, image, owner);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);

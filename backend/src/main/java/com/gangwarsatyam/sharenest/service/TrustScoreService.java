@@ -1,6 +1,7 @@
 package com.gangwarsatyam.sharenest.service;
 
 import com.gangwarsatyam.sharenest.dto.TrustScoreDto;
+import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
 import com.gangwarsatyam.sharenest.repository.RequestRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,23 +15,33 @@ public class TrustScoreService {
     private final RequestRepository requestRepo;
 
     public TrustScoreDto calculateTrustScore(String userId) {
-        User user = userRepo.findById(Long.parseLong(userId)).orElseThrow(() -> new RuntimeException("User not found"));
+        // ✅ MongoDB: IDs are Strings, no parseLong
+        User user = userRepo.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        int lendCount = requestRepo.findByOwnerId(user.getId().toString()).stream()
+        // ✅ count lending (owner side)
+        int lendCount = (int) requestRepo.findByOwnerId(user.getId())
+                .stream()
                 .filter(r -> "ACCEPTED".equals(r.getStatus()))
-                .mapToInt(r -> 1).sum();
-        int borrowCount = requestRepo.findByBorrowerId(user.getId().toString()).stream()
+                .count();
+
+        // ✅ count borrowing (borrower side)
+        int borrowCount = (int) requestRepo.findByBorrowerId(user.getId())
+                .stream()
                 .filter(r -> "ACCEPTED".equals(r.getStatus()))
-                .mapToInt(r -> 1).sum();
+                .count();
 
-        double score = (lendCount + borrowCount) > 0 ?
-                (double) lendCount / (lendCount + borrowCount) : 0.0;
+        // ✅ trust score = ratio of lending to total
+        double score = (lendCount + borrowCount) > 0
+                ? (double) lendCount / (lendCount + borrowCount)
+                : 0.0;
 
+        // ✅ update and save user
         user.setLendCount(lendCount);
         user.setBorrowCount(borrowCount);
         user.setTrustScore(score);
         userRepo.save(user);
 
-        return new TrustScoreDto(user.getId().toString(), score, lendCount, borrowCount);
+        return new TrustScoreDto(user.getId(), score, lendCount, borrowCount);
     }
 }
