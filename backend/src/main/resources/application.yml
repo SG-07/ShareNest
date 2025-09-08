@@ -23,4 +23,4 @@ logging:
     com.gangwarsatyam.sharenest: DEBUG
 
 server:
-  port: 8080
+  port: ${PORT:8080}
