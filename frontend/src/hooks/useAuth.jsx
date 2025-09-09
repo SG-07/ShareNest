@@ -1,4 +1,4 @@
-/* src/hooks/useAuth.js */
+/* src/hooks/useAuth.jsx */
 import { createContext, useContext, useEffect, useState } from 'react';
 import { login, register, logout, getCurrentUser } from '../services/apis';
 
