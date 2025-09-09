@@ -1,0 +1,17 @@
+# Ignore target directory (to avoid including old builds)
+target/
+
+# Ignore local IDE config files
+*.iml
+.idea/
+.vscode/
+
+# Ignore system files
+.DS_Store
+*.log
+
+# Ignore .git directory
+.git
+
+# Ignore node_modules if any
+node_modules/

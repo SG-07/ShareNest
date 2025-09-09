@@ -3,18 +3,18 @@ spring:
     name: sharenest-backend
   data:
     mongodb:
-      uri: ${MONGODB_URI}
+      uri: ${MONGODB_URI:mongodb+srv://gangwars:Tog0nFk3GXuVorA4@cluster0.hhcnyf2.mongodb.net/sharenest?retryWrites=true&w=majority&appName=NewNest}
   jackson:
     serialization:
       write-dates-as-timestamps: false
 
 cloudinary:
-  cloud_name: ${CLOUDINARY_CLOUD_NAME}
-  api_key: ${CLOUDINARY_API_KEY}
-  api_secret: ${CLOUDINARY_API_SECRET}
+  cloud_name: ${CLOUDINARY_CLOUD_NAME:duh4hgrhy}
+  api_key: ${CLOUDINARY_API_KEY:373679537749362}
+  api_secret: ${CLOUDINARY_API_SECRET:70PbAwOzvQDmoy4LReNx1HZRXnM}
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:T@@long@r3nsd?fnawv//35satnafwsafbaw^^^247124ysdha2y5}
   expiration: 86400000  # 24h in ms
 
 logging:
