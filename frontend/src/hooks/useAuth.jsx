@@ -1,28 +1,30 @@
 /* src/hooks/useAuth.jsx */
 import { createContext, useContext, useEffect, useState } from 'react';
-import { login, register, logout, getCurrentUser } from '../services/apis';
+import { login, register, logout, getCurrentUser } from '../services/api';
 
 /* ------------------------------------
  *  Auth Context
  * ------------------------------------ */
 const AuthContext = createContext(null);
 
-/**
- * AuthProvider – keeps the logged‑in user in state
- * and exposes helper functions
- */
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);   // the user object returned by /auth/me
-  const [loading, setLoading] = useState(true); // while we fetch the current user
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  /* Load user when the app starts */
+  // Load user when the app starts, only if token exists
   useEffect(() => {
     const init = async () => {
+      const token = localStorage.getItem('jwtToken');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
       try {
         const { data } = await getCurrentUser();
         setUser(data);
       } catch (_) {
         setUser(null);
+        localStorage.removeItem('jwtToken');
       } finally {
         setLoading(false);
       }
@@ -30,41 +32,31 @@ export const AuthProvider = ({ children }) => {
     init();
   }, []);
 
-  /* Helper that logs in the user & stores the JWT */
   const loginUser = async (creds) => {
     const { data } = await login(creds);
-    // Assuming your backend sends the JWT in the response body
     localStorage.setItem('jwtToken', data.token);
-    setUser(data.user);   // the payload that contains id, name, email …
+    setUser(data.user);
   };
 
-  /* Helper that registers a new account */
   const registerUser = async (creds) => {
     const { data } = await register(creds);
     localStorage.setItem('jwtToken', data.token);
     setUser(data.user);
   };
 
-  /* Log out the user */
   const logoutUser = async () => {
-    await logout(); // optional – only if you have a `/auth/logout` endpoint
+    try {
+      await logout();
+    } catch (_) {
+      // ignore network errors on logout
+    }
     localStorage.removeItem('jwtToken');
     setUser(null);
   };
 
-  /* The value that will be exposed through the context */
-  const value = {
-    user,
-    loading,
-    login: loginUser,
-    register: registerUser,
-    logout: logoutUser,
-  };
+  const value = { user, loading, login: loginUser, register: registerUser, logout: logoutUser };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-/**
- * Hook that lets any component consume the AuthContext
- */
 export const useAuth = () => useContext(AuthContext);
