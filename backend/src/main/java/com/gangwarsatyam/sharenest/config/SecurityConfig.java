@@ -2,6 +2,7 @@ package com.gangwarsatyam.sharenest.config;
 
 import com.gangwarsatyam.sharenest.repository.UserRepository;
 import com.gangwarsatyam.sharenest.security.JwtProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -23,6 +24,9 @@ public class SecurityConfig {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
 
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+
     public SecurityConfig(JwtProvider jwtProvider, UserRepository userRepository) {
         this.jwtProvider = jwtProvider;
         this.userRepository = userRepository;
@@ -35,8 +39,16 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/healthz").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/refresh").authenticated()
-                        .requestMatchers("/api/items/**", "/api/trust-score/**", "/api/map-items").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/auth/refresh", "/api/auth/me").authenticated()
+
+                        // Public read-only endpoints
+                        .requestMatchers(HttpMethod.GET, "/api/items/**", "/api/trust-score/**", "/api/map-items").permitAll()
+
+                        // Write endpoints (requires auth + role)
+                        .requestMatchers(HttpMethod.POST, "/api/items/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/api/items/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/items/**").hasAnyRole("USER", "ADMIN")
+
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(
@@ -71,8 +83,8 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("https://sharenest.onrender.com");
-        config.addAllowedOrigin("https://sharenest-backend.onrender.com");
+
+        config.addAllowedOrigin(frontendUrl); // Using value from application.yml
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 
