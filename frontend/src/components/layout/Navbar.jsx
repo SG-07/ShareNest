@@ -1,5 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
-import Logo from '../assets/logo.svg';  // your logo file
+import Logo from '../../assets/logo.svg';  
 
 export default function Navbar() {
   const navLinks = [
@@ -14,7 +14,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center">
           <img src={Logo} alt="Logo" className="h-8 w-auto" />
-          <span className="ml-2 font-bold text-xl text-indigo-600">MyApp</span>
+          <span className="ml-2 font-bold text-xl text-indigo-600">ShareNest</span>
         </Link>
 
         {/* Desktop Links */}

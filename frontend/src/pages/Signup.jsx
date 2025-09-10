@@ -1,6 +1,6 @@
 // src/pages/Signup.jsx
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 export default function Signup() {
@@ -9,6 +9,8 @@ export default function Signup() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
   const onChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -19,7 +21,7 @@ export default function Signup() {
     try {
       setBusy(true);
       await registerUser(form);
-      navigate("/", { replace: true });
+      navigate(from, { replace: true });
     } catch (err) {
       console.error("[Signup failed]", err);
       setError(err?.response?.data?.message || "Sign up failed");

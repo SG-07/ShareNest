@@ -5,7 +5,7 @@ import axios from 'axios';
  * Build a baseURL that ensures "/api" is appended once.
  * Read from REACT_APP_API_BASE_URL in .env (you included this file).
  */
-const rawBase = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+const rawBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const base = rawBase.replace(/\/+$/, ''); // strip trailing slashes
 const baseURL = `${base}/api`; // safe: ensures we call backend at /api/*
 

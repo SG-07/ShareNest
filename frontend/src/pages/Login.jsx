@@ -82,6 +82,7 @@ export default function Login() {
           </button>
           <Link
             to="/signup"
+            state={{ from: location.state?.from }} 
             className="text-sm text-indigo-600 hover:underline"
           >
             Create account
