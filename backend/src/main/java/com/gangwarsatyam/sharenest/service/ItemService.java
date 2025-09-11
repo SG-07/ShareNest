@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
+import org.springframework.beans.factory.annotation.Value;
 import java.io.IOException;
 import java.util.List;
 
@@ -20,22 +20,28 @@ import java.util.List;
 public class ItemService {
 
     private static final Logger logger = LoggerFactory.getLogger(ItemService.class);
+
+    @Value("${app.debug}")
+    private boolean debug;
+
     private final ItemRepository itemRepo;
     private final UserRepository userRepo;
     private final CloudinaryService cloudinaryService;
 
     public List<ItemResponse> getAllItems() {
-        logger.debug("Fetching all items from DB");
+        if (debug) logger.debug("Fetching all items from DB");
         return itemRepo.findAll().stream().map(this::toResponse).toList();
     }
 
     public ItemResponse getItemById(String id) {
         Item item = itemRepo.findById(id).orElseThrow(() -> new RuntimeException("Item not found"));
-        logger.debug("Fetched item {}", id);
+        if (debug) logger.debug("Fetched item {}", id);
         return toResponse(item);
     }
 
     public ItemResponse addItem(ItemDto dto, MultipartFile image, User owner) throws IOException {
+        if (debug) logger.debug("Adding item for user: {}", owner.getUsername());
+
         String imageUrl = cloudinaryService.uploadImage(image.getBytes(), "sharenest/items");
         Item item = Item.builder()
                 .name(dto.getName())
@@ -47,8 +53,10 @@ public class ItemService {
                 .longitude(dto.getLongitude())
                 .ownerId(owner.getId().toString())
                 .build();
+
         Item saved = itemRepo.save(item);
         logger.info("New item added by {}: {}", owner.getUsername(), saved.getName());
+
         return toResponse(saved);
     }
 
@@ -56,7 +64,7 @@ public class ItemService {
         Item item = itemRepo.findById(itemId).orElseThrow(() -> new RuntimeException("Item not found"));
         item.setAvailable(true);
         itemRepo.save(item);
-        logger.debug("Item {} set to available", itemId);
+        if (debug) logger.debug("Item {} set to available", itemId);
     }
 
     private ItemResponse toResponse(Item item) {
