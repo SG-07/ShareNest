@@ -18,13 +18,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+@Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
+
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
 
@@ -37,15 +40,14 @@ public class JwtFilter extends OncePerRequestFilter {
             if (StringUtils.hasText(token) && jwtProvider.validate(token)) {
                 String username = jwtProvider.getUsername(token);
 
-                // ✅ Explicitly use your entity (avoids clash with Spring Security's User)
-                com.gangwarsatyam.sharenest.model.User user = userRepository.findByUsername(username)
+                User user = userRepository.findByUsername(username)
                         .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 user,
                                 null,
-                                user.getAuthorities() // works because your entity implements UserDetails
+                                user.getAuthorities()
                         );
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
