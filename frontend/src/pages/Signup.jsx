@@ -37,6 +37,7 @@ export default function Signup() {
         setChecking(true);
         devLog("Signup", "Checking username availability:", form.username);
         const res = await checkUsername(form.username);
+        console.log("[Username check response]", res.data);
         devLog("Signup", "Username check response:", res.data);
         setUsernameAvailable(res.data?.available);
       } catch (err) {
@@ -54,13 +55,14 @@ export default function Signup() {
     e.preventDefault();
     try {
       setBusy(true);
-      // ✅ Debug payload only in dev mode
       devLog("Signup", "Sending registration data:", form);
-      await register(form);
+      const result = await register(form);
+      console.log("[Signup response]", result);
       toast.success("Account created and logged in 🎉");
       navigate(from, { replace: true });
     } catch (err) {
       devLog("Signup", "Registration failed", err);
+      console.error("[Signup failed]", err);
       toast.error(err?.response?.data?.message || "Sign up failed");
     } finally {
       setBusy(false);

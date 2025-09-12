@@ -1,4 +1,4 @@
-// src/services/api.js
+// src/services/api.jsx
 import axios from "axios";
 
 const rawBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
@@ -10,6 +10,7 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Attach token if exists
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("jwtToken");
@@ -23,7 +24,10 @@ api.interceptors.request.use(
    Auth
    ------------------------- */
 export const register = (payload) => api.post("/auth/register", payload);
-export const login = (payload) => api.post("/auth/login", payload);
+export const login = (payload) =>
+  api.post("/auth/login", payload, {
+    headers: { "Content-Type": "application/json" },
+  });
 export const logout = () => api.post("/auth/logout");
 export const getCurrentUser = () => api.get("/auth/me");
 export const checkUsername = (username) =>
