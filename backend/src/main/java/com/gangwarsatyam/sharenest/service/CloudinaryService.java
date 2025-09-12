@@ -4,12 +4,18 @@ import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
 import java.io.IOException;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class CloudinaryService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CloudinaryService.class);
+
+    @Value("${app.debug}")
+    private boolean debug;
 
     private final Cloudinary cloudinary;
 
@@ -24,8 +30,14 @@ public class CloudinaryService {
     }
 
     public String uploadImage(byte[] imageBytes, String folder) throws IOException {
+        if (debug) logger.debug("Uploading image to Cloudinary folder: {}", folder);
+
         Map uploadResult = cloudinary.uploader()
                 .upload(imageBytes, ObjectUtils.asMap("folder", folder));
-        return uploadResult.get("secure_url").toString();
+
+        String url = uploadResult.get("secure_url").toString();
+        if (debug) logger.debug("Image uploaded successfully: {}", url);
+
+        return url;
     }
 }
