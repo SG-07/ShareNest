@@ -6,4 +6,6 @@ import lombok.*;
 public class AuthRequest {
     private String email;
     private String password;
+    private String name;
+    private String username;
 }

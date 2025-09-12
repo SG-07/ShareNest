@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -16,25 +17,30 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final JwtProvider jwtProvider;
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> signup(@Valid @RequestBody AuthRequest req) {
+    public ResponseEntity<AuthResponse> signup(@RequestBody AuthRequest req) {
         User user = authService.register(
-                req.getEmail().split("@")[0],   // Generate username from email prefix
+                req.getUsername(),
                 req.getPassword(),
                 req.getEmail(),
-                req.getEmail().split("@")[0]
+                req.getName()
         );
 
-        String token = jwtProvider.generateToken(user.getEmail());  // Generate token using email
+        String token = authService.authenticateAndGetToken(req.getUsername(), req.getPassword());
+
         return ResponseEntity.ok(new AuthResponse(token));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest req) {
-        authService.authenticate(req.getEmail(), req.getPassword());
-        String token = jwtProvider.generateToken(req.getEmail());
+    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest req) {
+        String token = authService.authenticateAndGetToken(req.getUsername(), req.getPassword());
         return ResponseEntity.ok(new AuthResponse(token));
+    }
+
+    @GetMapping("/check-username")
+    public ResponseEntity<Map<String, Boolean>> checkUsernameAvailability(@RequestParam String username) {
+        boolean available = authService.isUsernameAvailable(username);
+        return ResponseEntity.ok(Map.of("available", available));
     }
 }

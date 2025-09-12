@@ -2,7 +2,6 @@ package com.gangwarsatyam.sharenest.config;
 
 import com.gangwarsatyam.sharenest.repository.UserRepository;
 import com.gangwarsatyam.sharenest.security.JwtProvider;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -10,26 +9,26 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+import java.util.List;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 
 @Configuration
 public class SecurityConfig {
 
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
+    private final AppProperties appProperties;
 
-    @Value("${app.frontend-url}")
-    private String frontendUrl;
-
-    public SecurityConfig(JwtProvider jwtProvider, UserRepository userRepository) {
+    public SecurityConfig(JwtProvider jwtProvider, UserRepository userRepository, AppProperties appProperties) {
         this.jwtProvider = jwtProvider;
         this.userRepository = userRepository;
+        this.appProperties = appProperties;
     }
 
     @Bean
@@ -39,16 +38,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/healthz").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/check-username").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/refresh", "/api/auth/me").authenticated()
-
-                        // Public read-only endpoints
                         .requestMatchers(HttpMethod.GET, "/api/items/**", "/api/trust-score/**", "/api/map-items").permitAll()
-
-                        // Write endpoints (requires auth + role)
                         .requestMatchers(HttpMethod.POST, "/api/items/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/items/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/items/**").hasAnyRole("USER", "ADMIN")
-
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(
@@ -68,7 +63,6 @@ public class SecurityConfig {
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(username -> userRepository.findByUsername(username)
-                .map(user -> user)
                 .orElseThrow(() -> new RuntimeException("User not found")));
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
@@ -83,10 +77,11 @@ public class SecurityConfig {
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedMethods(List.of("*"));
 
-        config.addAllowedOrigin(frontendUrl); // Using value from application.yml
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
+        // Add each frontend URL as an allowed origin
+        config.setAllowedOrigins(appProperties.getFrontendUrl());
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
