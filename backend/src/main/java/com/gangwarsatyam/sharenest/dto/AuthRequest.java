@@ -2,13 +2,10 @@ package com.gangwarsatyam.sharenest.dto;
 
 import lombok.*;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter @Setter
 public class AuthRequest {
-    private String username;  // Changed from email to username for login/signup
+    private String email;
     private String password;
-    private String email;     // Required for signup
-    private String name;      // Required for signup
+    private String name;
+    private String username;
 }
