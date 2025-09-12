@@ -31,4 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignore actual config file
 application.yml
+
+# Optional: ignore other env-specific configs
+application-dev.yml
+application-prod.yml

@@ -4,35 +4,22 @@ import { getItems } from "../services/api";
 import Loading from "../components/common/Loading";
 import ErrorBanner from "../components/common/Error";
 import ItemCard from "../components/ui/ItemCard";
+import { useSearch } from "../context/SearchContext";
+import { devLog } from "../utils/devLog"; // 🔹 dev log helper
 
-// 🔹 small filter bar component (kept inline for simplicity)
 function ItemFilterBar({ onFilter }) {
-  const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
   const [availability, setAvailability] = useState("");
 
   return (
     <div className="bg-white shadow rounded-lg p-4 mb-6 flex flex-col sm:flex-row gap-4 items-center">
-      {/* Search */}
-      <input
-        type="text"
-        placeholder="Search items..."
-        value={query}
-        onChange={(e) => {
-          const v = e.target.value;
-          setQuery(v);
-          onFilter({ query: v, category, availability });
-        }}
-        className="input w-full sm:w-1/3"
-      />
-
-      {/* Category */}
       <select
         value={category}
         onChange={(e) => {
           const v = e.target.value;
           setCategory(v);
-          onFilter({ query, category: v, availability });
+          onFilter({ category: v, availability });
+          devLog("Filter changed:", { category: v, availability });
         }}
         className="input w-full sm:w-1/4"
       >
@@ -43,13 +30,13 @@ function ItemFilterBar({ onFilter }) {
         <option value="Misc">Misc</option>
       </select>
 
-      {/* Availability */}
       <select
         value={availability}
         onChange={(e) => {
           const v = e.target.value;
           setAvailability(v);
-          onFilter({ query, category, availability: v });
+          onFilter({ category, availability: v });
+          devLog("Availability filter changed:", v);
         }}
         className="input w-full sm:w-1/4"
       >
@@ -62,8 +49,9 @@ function ItemFilterBar({ onFilter }) {
 }
 
 export default function Home() {
+  const { query } = useSearch();
   const [items, setItems] = useState([]);
-  const [filters, setFilters] = useState({ query: "", category: "", availability: "" });
+  const [filters, setFilters] = useState({ category: "", availability: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -72,33 +60,28 @@ export default function Home() {
     async function fetchItems() {
       try {
         setLoading(true);
+        devLog("Fetching items from API...");
         const res = await getItems();
+        devLog("Items fetched:", res.data);
         if (!mounted) return;
         setItems(res.data || []);
-        console.debug("[Home] loaded items:", (res.data || []).length);
       } catch (err) {
-        console.error("Failed to fetch items", err);
+        devLog("Error fetching items:", err);
         setError(err?.response?.data?.message || err.message || "Unable to load items");
       } finally {
         if (mounted) setLoading(false);
       }
     }
     fetchItems();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
   if (loading) return <Loading message="Loading catalog..." />;
   if (error) return <ErrorBanner message={error} />;
 
-  // 🔹 Apply filtering
   const filteredItems = items.filter((item) => {
-    const matchQuery =
-      !filters.query ||
-      item.name?.toLowerCase().includes(filters.query.toLowerCase());
-    const matchCategory =
-      !filters.category || item.category === filters.category;
+    const matchQuery = !query || item.name?.toLowerCase().includes(query.toLowerCase());
+    const matchCategory = !filters.category || item.category === filters.category;
     const matchAvailability =
       !filters.availability ||
       (filters.availability === "true" ? item.available : !item.available);
@@ -106,15 +89,12 @@ export default function Home() {
     return matchQuery && matchCategory && matchAvailability;
   });
 
+  devLog("Filtered items to display:", filteredItems);
+
   return (
     <div className="max-w-7xl mx-auto px-4">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Catalog</h1>
-      </div>
-
-      {/* 🔹 Filter Bar */}
+      <h1 className="text-2xl font-bold mb-6">Catalog</h1>
       <ItemFilterBar onFilter={setFilters} />
-
       {filteredItems.length === 0 ? (
         <div className="text-center py-12 text-gray-600">
           No items found — try different filters!
