@@ -1,17 +1,14 @@
 /* src/hooks/useAuth.jsx */
 import { createContext, useContext, useEffect, useState } from 'react';
 import { login, register, logout, getCurrentUser } from '../services/api';
+import { devLog } from '../utils/devLog';
 
-/* ------------------------------------
- *  Auth Context
- * ------------------------------------ */
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Load user when the app starts, only if token exists
   useEffect(() => {
     const init = async () => {
       const token = localStorage.getItem('jwtToken');
@@ -20,11 +17,13 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       try {
+        devLog("Auth", "Fetching current user");
         const { data } = await getCurrentUser();
         setUser(data);
-      } catch (_) {
-        setUser(null);
+      } catch (err) {
+        devLog("Auth", "Failed to fetch current user", err);
         localStorage.removeItem('jwtToken');
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -33,30 +32,39 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const loginUser = async (creds) => {
+    devLog("Auth", "Logging in user", creds);
     const { data } = await login(creds);
     localStorage.setItem('jwtToken', data.token);
     setUser(data.user);
   };
 
   const registerUser = async (creds) => {
+    devLog("Auth", "Registering user", creds);
     const { data } = await register(creds);
     localStorage.setItem('jwtToken', data.token);
     setUser(data.user);
   };
 
   const logoutUser = async () => {
-    try {
-      await logout();
-    } catch (_) {
-      // ignore network errors on logout
-    }
+    devLog("Auth", "Logging out user");
+    try { await logout(); } catch (_) {}
     localStorage.removeItem('jwtToken');
     setUser(null);
   };
 
-  const value = { user, loading, login: loginUser, register: registerUser, logout: logoutUser };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login: loginUser,
+        register: registerUser,
+        logout: logoutUser,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => useContext(AuthContext);

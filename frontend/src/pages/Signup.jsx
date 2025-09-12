@@ -1,13 +1,23 @@
 // src/pages/Signup.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { toast } from "react-toastify";
+import { devLog } from "../utils/devLog";
+import { checkUsername } from "../services/api";
 
 export default function Signup() {
-  const { register: registerUser } = useAuth();
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const { register } = useAuth();
+  const [form, setForm] = useState({
+    name: "",
+    username: "",
+    email: "",
+    password: "",
+  });
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
+  const [checking, setChecking] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState(null);
+
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
@@ -15,16 +25,43 @@ export default function Signup() {
   const onChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
+  // ✅ Debounced username availability check
+  useEffect(() => {
+    if (!form.username) {
+      setUsernameAvailable(null);
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      try {
+        setChecking(true);
+        devLog("Signup", "Checking username availability:", form.username);
+        const res = await checkUsername(form.username);
+        devLog("Signup", "Username check response:", res.data);
+        setUsernameAvailable(res.data?.available);
+      } catch (err) {
+        devLog("Signup", "Username check failed", err);
+        setUsernameAvailable(false);
+      } finally {
+        setChecking(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [form.username]);
+
   const submit = async (e) => {
     e.preventDefault();
-    setError(null);
     try {
       setBusy(true);
-      await registerUser(form);
+      // ✅ Debug payload only in dev mode
+      devLog("Signup", "Sending registration data:", form);
+      await register(form);
+      toast.success("Account created and logged in 🎉");
       navigate(from, { replace: true });
     } catch (err) {
-      console.error("[Signup failed]", err);
-      setError(err?.response?.data?.message || "Sign up failed");
+      devLog("Signup", "Registration failed", err);
+      toast.error(err?.response?.data?.message || "Sign up failed");
     } finally {
       setBusy(false);
     }
@@ -33,13 +70,11 @@ export default function Signup() {
   return (
     <div className="max-w-md mx-auto px-4">
       <h1 className="text-2xl font-bold mb-4">Create an account</h1>
-
-      {error && <div className="text-red-600 mb-2">{error}</div>}
-
       <form
         onSubmit={submit}
-        className="bg-white p-6 rounded shadow space-y-4"
+        className="bg-white dark:bg-gray-900 p-6 rounded shadow space-y-4"
       >
+        {/* Name */}
         <div>
           <label htmlFor="name" className="block text-sm font-medium mb-1">
             Name
@@ -54,6 +89,31 @@ export default function Signup() {
           />
         </div>
 
+        {/* Username */}
+        <div>
+          <label htmlFor="username" className="block text-sm font-medium mb-1">
+            Username
+          </label>
+          <input
+            id="username"
+            name="username"
+            value={form.username}
+            onChange={onChange}
+            required
+            className="w-full input"
+          />
+          {checking && (
+            <p className="text-sm text-gray-500">Checking availability…</p>
+          )}
+          {usernameAvailable === false && (
+            <p className="text-sm text-red-500">❌ Username is already taken</p>
+          )}
+          {usernameAvailable === true && (
+            <p className="text-sm text-green-600">✅ Username is available</p>
+          )}
+        </div>
+
+        {/* Email */}
         <div>
           <label htmlFor="email" className="block text-sm font-medium mb-1">
             Email
@@ -69,11 +129,9 @@ export default function Signup() {
           />
         </div>
 
+        {/* Password */}
         <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium mb-1"
-          >
+          <label htmlFor="password" className="block text-sm font-medium mb-1">
             Password
           </label>
           <input
@@ -87,9 +145,15 @@ export default function Signup() {
           />
         </div>
 
+        {/* Submit */}
         <div className="flex justify-end">
           <button
-            disabled={busy}
+            disabled={
+              busy ||
+              checking ||
+              usernameAvailable === false ||
+              !usernameAvailable
+            }
             className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {busy ? "Creating…" : "Create account"}
@@ -99,3 +163,5 @@ export default function Signup() {
     </div>
   );
 }
+
+

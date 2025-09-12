@@ -2,12 +2,13 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { toast } from "react-toastify";
+import { devLog } from "../utils/devLog";
 
 export default function Login() {
   const { login } = useAuth();
   const [creds, setCreds] = useState({ email: "", password: "" });
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || "/";
@@ -17,14 +18,17 @@ export default function Login() {
 
   const submit = async (e) => {
     e.preventDefault();
-    setError(null);
     try {
       setBusy(true);
+      devLog("Login", "Sending credentials", creds);
       await login(creds);
+      devLog("Login", "Login successful");
+      toast.success("Welcome back 👋");
       navigate(from, { replace: true });
     } catch (err) {
+      devLog("Login", "Login failed", err);
       console.error("[Login failed]", err);
-      setError(err?.response?.data?.message || "Login failed");
+      toast.error(err?.response?.data?.message || "Login failed");
     } finally {
       setBusy(false);
     }
@@ -33,9 +37,6 @@ export default function Login() {
   return (
     <div className="max-w-md mx-auto px-4">
       <h1 className="text-2xl font-bold mb-4">Log in</h1>
-
-      {error && <div className="text-red-600 mb-2">{error}</div>}
-
       <form
         onSubmit={submit}
         className="bg-white p-6 rounded shadow space-y-4"
@@ -56,10 +57,7 @@ export default function Login() {
         </div>
 
         <div>
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium mb-1"
-          >
+          <label htmlFor="password" className="block text-sm font-medium mb-1">
             Password
           </label>
           <input
@@ -82,7 +80,7 @@ export default function Login() {
           </button>
           <Link
             to="/signup"
-            state={{ from: location.state?.from }} 
+            state={{ from: location.state?.from }}
             className="text-sm text-indigo-600 hover:underline"
           >
             Create account

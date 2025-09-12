@@ -5,6 +5,9 @@ import App from "./App";
 import { AuthProvider } from "./hooks/useAuth";
 import "./index.css";
 import "./App.css";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { SearchProvider } from "./context/SearchContext";
 
 const root = createRoot(document.getElementById("root"));
 
@@ -12,8 +15,11 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <SearchProvider>
+          <App />
+        </SearchProvider>
       </AuthProvider>
+      <ToastContainer position="top-right" autoClose={3000} />
     </BrowserRouter>
   </React.StrictMode>
 );
