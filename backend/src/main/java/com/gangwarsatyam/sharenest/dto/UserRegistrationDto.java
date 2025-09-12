@@ -10,7 +10,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserRegistrationDto {
-    private String username;
+    private String username;   // Now explicitly required
     private String email;
     private String password;
     private String name;

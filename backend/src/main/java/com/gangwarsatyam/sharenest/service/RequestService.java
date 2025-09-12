@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.List;
 
@@ -19,11 +20,16 @@ public class RequestService {
 
     private static final Logger logger = LoggerFactory.getLogger(RequestService.class);
 
+    @Value("${app.debug}")
+    private boolean debug;
+
     private final RequestRepository requestRepo;
     private final ItemRepository itemRepo;
     private final UserRepository userRepo;
 
     public Request submitRequest(String itemId, String borrowerId) {
+        if (debug) logger.debug("Submitting request by borrower: {} for item: {}", borrowerId, itemId);
+
         Item item = itemRepo.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found"));
 
@@ -43,7 +49,7 @@ public class RequestService {
 
         requestRepo.save(req);
 
-        item.setAvailable(false); // lock item
+        item.setAvailable(false);
         itemRepo.save(item);
 
         logger.info("Borrow request {} submitted by {} for item {}", req.getId(), borrowerId, itemId);
@@ -51,14 +57,18 @@ public class RequestService {
     }
 
     public List<Request> getRequestsByBorrower(String borrowerId) {
+        if (debug) logger.debug("Getting requests by borrower: {}", borrowerId);
         return requestRepo.findByBorrowerId(borrowerId);
     }
 
     public List<Request> getRequestsByOwner(String ownerId) {
+        if (debug) logger.debug("Getting requests by owner: {}", ownerId);
         return requestRepo.findByOwnerId(ownerId);
     }
 
     public void cancelRequest(String requestId, String borrowerId) {
+        if (debug) logger.debug("Cancelling request: {} by borrower: {}", requestId, borrowerId);
+
         Request req = requestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
@@ -73,7 +83,6 @@ public class RequestService {
         req.setStatus("CANCELLED");
         requestRepo.save(req);
 
-        // unlock item
         Item item = itemRepo.findById(req.getItemId())
                 .orElseThrow(() -> new RuntimeException("Item not found"));
         item.setAvailable(true);
