@@ -38,9 +38,9 @@ export const AuthProvider = ({ children }) => {
 
     const data = {};
     if (identifier.includes("@")) {
-      data.email = identifier;
+      data.email = email;
     } else {
-      data.username = identifier;
+      data.username = username;
     }
     data.password = password;
 

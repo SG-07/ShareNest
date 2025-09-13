@@ -3,6 +3,7 @@ package com.gangwarsatyam.sharenest.controller;
 import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.dto.AuthRequest;
 import com.gangwarsatyam.sharenest.dto.AuthResponse;
+import com.gangwarsatyam.sharenest.exception.ServiceException;
 import com.gangwarsatyam.sharenest.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,13 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest req) {
-        String identifier = req.getUsername() != null ? req.getUsername() : req.getEmail();
+        String identifier = (req.getUsername() != null && !req.getUsername().isEmpty())
+                ? req.getUsername()
+                : req.getEmail();
+
+        if (identifier == null || identifier.isEmpty()) {
+            throw new ServiceException("Username or email must be provided", 400, "IDENTIFIER_MISSING");
+        }
         logger.debug("[AuthController][Login] Received identifier: {}", identifier);
 
         String token = authService.authenticateAndGetToken(identifier, req.getPassword());
