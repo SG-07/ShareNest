@@ -1,10 +1,9 @@
 package com.gangwarsatyam.sharenest.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@Getter
-@Setter
-@NoArgsConstructor
+@Data
 @AllArgsConstructor
 public class AuthResponse {
     private String token;

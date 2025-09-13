@@ -34,11 +34,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                // Disable CSRF since we're using JWT and JSON requests
                 .csrf(csrf -> csrf.disable())
+
+                // Authorize requests
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints
                         .requestMatchers("/", "/healthz").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/check-username").permitAll()
+
+                        // Protected endpoints
                         .requestMatchers(HttpMethod.GET, "/api/auth/refresh", "/api/auth/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/items/**", "/api/trust-score/**", "/api/map-items").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/items/**").hasAnyRole("USER", "ADMIN")
@@ -46,10 +52,20 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/items/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
                 )
+
+                // Stateless session for JWT
                 .sessionManagement(session -> session.sessionCreationPolicy(
                         org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
+
+                // Add JWT filter
                 .addFilterBefore(new JwtFilter(jwtProvider, userRepository),
-                        UsernamePasswordAuthenticationFilter.class);
+                        UsernamePasswordAuthenticationFilter.class)
+
+                // Disable default form login to prevent Spring from intercepting POST /api/auth/login
+                .formLogin(form -> form.disable())
+
+                // Disable HTTP Basic auth (optional)
+                .httpBasic(basic -> basic.disable());
 
         return http.build();
     }

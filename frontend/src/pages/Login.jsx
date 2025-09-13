@@ -7,7 +7,7 @@ import { devLog } from "../utils/devLog";
 
 export default function Login() {
   const { login } = useAuth();
-  const [creds, setCreds] = useState({ email: "", password: "" });
+  const [creds, setCreds] = useState({ identifier: "", password: "" });
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -21,7 +21,8 @@ export default function Login() {
     try {
       setBusy(true);
       devLog("Login", "Sending credentials", creds);
-      await login(creds);
+      const result = await login(creds.identifier, creds.password);
+      console.log("[Login response]", result);
       devLog("Login", "Login successful");
       toast.success("Welcome back 👋");
       navigate(from, { replace: true });
@@ -42,17 +43,18 @@ export default function Login() {
         className="bg-white p-6 rounded shadow space-y-4"
       >
         <div>
-          <label htmlFor="email" className="block text-sm font-medium mb-1">
-            Email
+          <label htmlFor="identifier" className="block text-sm font-medium mb-1">
+            Email or Username
           </label>
           <input
-            id="email"
-            name="email"
-            value={creds.email}
+            id="identifier"
+            name="identifier"
+            value={creds.identifier}
             onChange={onChange}
-            type="email"
+            type="text"
             required
             className="w-full input"
+            placeholder="Enter email or username"
           />
         </div>
 
