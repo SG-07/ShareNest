@@ -33,6 +33,10 @@ public class User implements UserDetails {
     @Builder.Default
     private List<String> roles = new ArrayList<>(); // Default empty list to avoid NPE
 
+    // NEW: items the user owns (reference to Item IDs)
+    @Builder.Default
+    private List<String> ownedItemIds = new ArrayList<>();
+
     // UserDetails implementations
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -61,4 +65,3 @@ public class User implements UserDetails {
         return true;
     }
 }
-

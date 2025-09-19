@@ -48,4 +48,20 @@ public class RequestController {
     public ResponseEntity<List<Request>> receivedRequests(@AuthenticationPrincipal User owner) {
         return ResponseEntity.ok(requestService.getRequestsByOwner(owner.getId()));
     }
+
+    @PostMapping("/{requestId}/accept")
+    public ResponseEntity<Void> acceptRequest(
+            @PathVariable String requestId,
+            @AuthenticationPrincipal User owner) {
+        requestService.acceptRequest(requestId, owner.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{requestId}/decline")
+    public ResponseEntity<Void> declineRequest(
+            @PathVariable String requestId,
+            @AuthenticationPrincipal User owner) {
+        requestService.declineRequest(requestId, owner.getId());
+        return ResponseEntity.noContent().build();
+    }
 }

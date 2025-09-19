@@ -1,6 +1,7 @@
 package com.gangwarsatyam.sharenest.config;
 
 import com.gangwarsatyam.sharenest.repository.UserRepository;
+import com.gangwarsatyam.sharenest.service.CustomUserDetailsService;
 import com.gangwarsatyam.sharenest.security.JwtProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,11 +42,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/", "/healthz").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/check-username").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/check-username", "/api/auth/check-email").permitAll()
 
                         // Protected endpoints
-                        .requestMatchers(HttpMethod.GET, "/api/auth/refresh", "/api/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/refresh").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/items/**", "/api/trust-score/**", "/api/map-items").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/items/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/api/items/**").hasAnyRole("USER", "ADMIN")
@@ -76,10 +77,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider() {
+    public AuthenticationProvider authenticationProvider(CustomUserDetailsService customUserDetailsService) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(username -> userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found")));
+        provider.setUserDetailsService(customUserDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
@@ -105,3 +105,4 @@ public class SecurityConfig {
         return new CorsFilter(source);
     }
 }
+
