@@ -15,6 +15,6 @@ public class Request {
     private String itemId;
     private String borrowerId;
     private String ownerId;
-    private String status;   // PENDING, ACCEPTED, DECLINED, CANCELLED
+    private RequestStatus status;
     private long requestDate = System.currentTimeMillis();
 }

@@ -1,8 +1,5 @@
 package com.gangwarsatyam.sharenest.service;
 
-import com.gangwarsatyam.sharenest.dto.ItemDto;
-import com.gangwarsatyam.sharenest.dto.ItemResponse;
-import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.model.Item;
 import com.gangwarsatyam.sharenest.repository.ItemRepository;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
@@ -10,9 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.beans.factory.annotation.Value;
-import java.io.IOException;
+
 import java.util.List;
 
 @Service
@@ -21,59 +16,98 @@ public class ItemService {
 
     private static final Logger logger = LoggerFactory.getLogger(ItemService.class);
 
-    @Value("${app.debug}")
-    private boolean debug;
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
 
-    private final ItemRepository itemRepo;
-    private final UserRepository userRepo;
-    private final CloudinaryService cloudinaryService;
-
-    public List<ItemResponse> getAllItems() {
-        if (debug) logger.debug("Fetching all items from DB");
-        return itemRepo.findAll().stream().map(this::toResponse).toList();
+    // ✅ Fetch all items (for map display)
+    public List<Item> getAllItems() {
+        logger.debug("[ItemService] Fetching ALL items (map view)");
+        return itemRepository.findAll();
     }
 
-    public ItemResponse getItemById(String id) {
-        Item item = itemRepo.findById(id).orElseThrow(() -> new RuntimeException("Item not found"));
-        if (debug) logger.debug("Fetched item {}", id);
-        return toResponse(item);
-    }
+    // ✅ Add item
+    public Item addItem(Item item, String username) {
+        String ownerId = userRepository.findByUsername(username)
+                .map(u -> u.getId())
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-    public ItemResponse addItem(ItemDto dto, MultipartFile image, User owner) throws IOException {
-        if (debug) logger.debug("Adding item for user: {}", owner.getUsername());
-
-        String imageUrl = cloudinaryService.uploadImage(image.getBytes(), "sharenest/items");
-        Item item = Item.builder()
-                .name(dto.getName())
-                .description(dto.getDescription())
-                .category(dto.getCategory())
-                .condition(dto.getCondition())
-                .imageUrl(imageUrl)
-                .latitude(dto.getLatitude())
-                .longitude(dto.getLongitude())
-                .ownerId(owner.getId().toString())
-                .build();
-
-        Item saved = itemRepo.save(item);
-        logger.info("New item added by {}: {}", owner.getUsername(), saved.getName());
-
-        return toResponse(saved);
-    }
-
-    public void makeAvailable(String itemId) {
-        Item item = itemRepo.findById(itemId).orElseThrow(() -> new RuntimeException("Item not found"));
+        item.setOwnerId(ownerId);
         item.setAvailable(true);
-        itemRepo.save(item);
-        if (debug) logger.debug("Item {} set to available", itemId);
+
+        Item saved = itemRepository.save(item);
+        logger.debug("[ItemService] Added new item '{}' for user '{}' (ownerId={})",
+                item.getName(), username, ownerId);
+        return saved;
     }
 
-    private ItemResponse toResponse(Item item) {
-        return new ItemResponse(
-                item.getId(), item.getName(), item.getDescription(),
-                item.getCategory(), item.getCondition(),
-                item.getImageUrl(), item.isAvailable(),
-                item.getLatitude(), item.getLongitude(),
-                item.getOwnerId()
-        );
+    // ✅ Fetch all available items
+    public List<Item> getAllAvailableItems() {
+        logger.debug("[ItemService] Fetching all available items");
+        return itemRepository.findByAvailableTrue();
+    }
+
+    // ✅ Update item (only owner can update)
+    public Item updateItem(String itemId, Item updatedItem, String username) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
+
+        String ownerId = userRepository.findByUsername(username)
+                .map(u -> u.getId())
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        if (!item.getOwnerId().equals(ownerId)) {
+            throw new RuntimeException("Unauthorized to update this item");
+        }
+
+        item.setName(updatedItem.getName());
+        item.setDescription(updatedItem.getDescription());
+        item.setCategory(updatedItem.getCategory());
+        item.setCondition(updatedItem.getCondition());
+        item.setLatitude(updatedItem.getLatitude());
+        item.setLongitude(updatedItem.getLongitude());
+        item.setAvailable(updatedItem.isAvailable());
+
+        Item saved = itemRepository.save(item);
+        logger.debug("[ItemService] Updated item '{}' for user '{}' (ownerId={})",
+                item.getName(), username, ownerId);
+        return saved;
+    }
+
+    // ✅ Delete item (only owner can delete)
+    public void deleteItem(String itemId, String username) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
+
+        String ownerId = userRepository.findByUsername(username)
+                .map(u -> u.getId())
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        if (!item.getOwnerId().equals(ownerId)) {
+            throw new RuntimeException("Unauthorized to delete this item");
+        }
+
+        itemRepository.delete(item);
+        logger.debug("[ItemService] Deleted item '{}' for user '{}' (ownerId={})",
+                item.getName(), username, ownerId);
+    }
+
+    // ✅ Get logged-in user's items
+    public List<Item> getMyItems(String username) {
+        String ownerId = userRepository.findByUsername(username)
+                .map(u -> u.getId())
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        logger.debug("[ItemService] Fetching ALL items for user '{}' (ownerId={})", username, ownerId);
+        return itemRepository.findByOwnerId(ownerId);
+    }
+
+    // ✅ Get logged-in user's available items
+    public List<Item> getMyAvailableItems(String username) {
+        String ownerId = userRepository.findByUsername(username)
+                .map(u -> u.getId())
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        logger.debug("[ItemService] Fetching AVAILABLE items for user '{}' (ownerId={})", username, ownerId);
+        return itemRepository.findByOwnerIdAndAvailableTrue(ownerId);
     }
 }

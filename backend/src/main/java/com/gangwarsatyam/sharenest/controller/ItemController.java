@@ -1,19 +1,15 @@
 package com.gangwarsatyam.sharenest.controller;
 
-import com.gangwarsatyam.sharenest.dto.ItemDto;
-import com.gangwarsatyam.sharenest.dto.ItemResponse;
-import com.gangwarsatyam.sharenest.model.User;          // ✅ import your entity
+import com.gangwarsatyam.sharenest.model.Item;
 import com.gangwarsatyam.sharenest.service.ItemService;
-
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -21,26 +17,68 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ItemController {
 
+    private static final Logger logger = LoggerFactory.getLogger(ItemController.class);
     private final ItemService itemService;
 
-    @GetMapping
-    public ResponseEntity<List<ItemResponse>> listItems() {
-        return ResponseEntity.ok(itemService.getAllItems());
+    // ✅ Create
+    @PostMapping(
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<Item> addItem(@RequestBody Item item, Authentication auth) {
+        logger.debug("[ItemController] Received item payload: {}", item);
+        String username = auth.getName();
+        Item saved = itemService.addItem(item, username);
+        return ResponseEntity.ok(saved);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ItemResponse> getItem(@PathVariable String id) {
-        return ResponseEntity.ok(itemService.getItemById(id));
+    // ✅ Read all available items
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Item>> getAllAvailableItems() {
+        logger.debug("[ItemController] Fetching all available items");
+        return ResponseEntity.ok(itemService.getAllAvailableItems());
     }
 
-    @PostMapping(consumes = {"multipart/form-data"})
-    public ResponseEntity<ItemResponse> addItem(
-            @Valid @ModelAttribute ItemDto dto,
-            @RequestPart("image") MultipartFile image,
-            @AuthenticationPrincipal User owner   // ✅ use your entity
-    ) throws IOException {
+    // ✅ Update (owner only)
+    @PutMapping(
+            value = "/{id}",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public ResponseEntity<Item> updateItem(
+            @PathVariable String id,
+            @RequestBody Item updatedItem,
+            Authentication auth) {
+        String username = auth.getName();
+        logger.debug("[ItemController] Update item {} request by user: {}", id, username);
+        Item saved = itemService.updateItem(id, updatedItem, username);
+        return ResponseEntity.ok(saved);
+    }
 
-        ItemResponse saved = itemService.addItem(dto, image, owner);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    // ✅ Delete (owner only)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteItem(
+            @PathVariable String id,
+            Authentication auth) {
+        String username = auth.getName();
+        logger.debug("[ItemController] Delete item {} request by user: {}", id, username);
+        itemService.deleteItem(id, username);
+        return ResponseEntity.ok("Item deleted successfully");
+    }
+
+    // ✅ Get logged-in user's items
+    @GetMapping(value = "/my", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Item>> getMyItems(Authentication auth) {
+        String username = auth.getName();
+        logger.debug("[ItemController] Fetch my items for user: {}", username);
+        return ResponseEntity.ok(itemService.getMyItems(username));
+    }
+
+    // ✅ Get logged-in user's available items
+    @GetMapping(value = "/my/available", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<List<Item>> getMyAvailableItems(Authentication auth) {
+        String username = auth.getName();
+        logger.debug("[ItemController] Fetch my available items for user: {}", username);
+        return ResponseEntity.ok(itemService.getMyAvailableItems(username));
     }
 }

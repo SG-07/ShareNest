@@ -1,86 +1,84 @@
 package com.gangwarsatyam.sharenest.service;
 
-import com.gangwarsatyam.sharenest.exception.ServiceException;
+import com.gangwarsatyam.sharenest.dto.AuthResponse;
+import com.gangwarsatyam.sharenest.dto.UserDto;
+import com.gangwarsatyam.sharenest.dto.UserRegistrationDto;
+import com.gangwarsatyam.sharenest.exception.BadRequestException;
+import com.gangwarsatyam.sharenest.exception.UnauthorizedException;
 import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
-import com.gangwarsatyam.sharenest.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final AuthenticationManager authenticationManager;
-    private final JwtProvider jwtProvider;
+    private final JwtService jwtService;
 
-    public User register(String username, String password, String email, String name) {
-        if (userRepository.existsByEmail(email)) {
-            throw new ServiceException("Email already registered", 409, "EMAIL_ALREADY_EXISTS");
+    public AuthResponse signup(UserRegistrationDto dto) {
+        // Check username/email uniqueness
+        if (userRepository.existsByUsername(dto.getUsername())) {
+            throw new BadRequestException("Username already exists");
+        }
+        if (dto.getEmail() != null && userRepository.existsByEmail(dto.getEmail())) {
+            throw new BadRequestException("Email already exists");
         }
 
-        if (userRepository.existsByUsername(username)) {
-            throw new ServiceException("Username already exists", 409, "USERNAME_ALREADY_EXISTS");
-        }
+        // Create new user
+        User user = new User();
+        user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail()); // optional, can be null
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setName(dto.getName());
+        user.setRoles(Collections.singletonList("ROLE_USER"));
 
-        User user = User.builder()
-                .username(username)
-                .password(passwordEncoder.encode(password))
-                .email(email)
-                .name(name)
-                .roles(List.of("ROLE_USER"))
-                .build();
+        userRepository.save(user);
 
-        User savedUser = userRepository.save(user);
-        logger.debug("[AuthService][Register] New user registered: {}", savedUser.getUsername());
+        // Generate JWT token
+        String token = jwtService.generateToken(user);
 
-        return savedUser;
+        // Map to safe DTO
+        UserDto userDto = new UserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getName(),
+                user.getTrustScore()
+        );
+
+        return new AuthResponse(token, userDto);
     }
 
-    public User authenticateByUsername(String username, String password) {
+    public AuthResponse login(String username, String password) {
+        // ✅ Fetch user by ONLY username
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new ServiceException(
-                        "User not found with username: " + username,
-                        404,
-                        "USER_NOT_FOUND"
-                ));
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
 
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), password)
+        // Validate password
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new UnauthorizedException("Invalid credentials");
+        }
+
+        // Generate JWT token
+        String token = jwtService.generateToken(user);
+
+        // Map to safe DTO
+        UserDto userDto = new UserDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getName(),
+                user.getTrustScore()
         );
 
-        logger.debug("[AuthService][AuthenticateByUsername] User authenticated: {}", user.getUsername());
-        return user;
-    }
-
-    public User authenticateByEmail(String email, String password) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ServiceException(
-                        "User not found with email: " + email,
-                        404,
-                        "USER_NOT_FOUND"
-                ));
-
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(user.getUsername(), password)
-        );
-
-        logger.debug("[AuthService][AuthenticateByEmail] User authenticated: {}", user.getUsername());
-        return user;
-    }
-
-    public boolean isUsernameAvailable(String username) {
-        return !userRepository.existsByUsername(username);
+        return new AuthResponse(token, userDto);
     }
 }
+
+

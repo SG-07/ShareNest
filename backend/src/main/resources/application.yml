@@ -14,7 +14,7 @@ cloudinary:
   api_secret: ${CLOUDINARY_API_SECRET:70PbAwOzvQDmoy4LReNx1HZRXnM}
 
 jwt:
-  secret: ${JWT_SECRET:T@@long@r3nsd?fnawv//35satnafwsafbaw^^^247124ysdha2y5}
+  secret: ${JWT_SECRET:OzHNaZz1yIdt8GffYLzMhc4LlnNTUVl17/Jq5oCLzO8TugyAeFxYmUi4JWKbVkS/x62d1UIH0ZBitZP7CxdA5w==}
   expiration: 86400000  # 24h in ms
 
 logging:
