@@ -48,11 +48,10 @@ public class AuthService {
         return savedUser;
     }
 
-    public String authenticateAndGetToken(String usernameOrEmail, String password) {
-        User user = userRepository.findByUsername(usernameOrEmail)
-                .or(() -> userRepository.findByEmail(usernameOrEmail))
+    public User authenticateByUsername(String username, String password) {
+        User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new ServiceException(
-                        "User not found with username or email: " + usernameOrEmail,
+                        "User not found with username: " + username,
                         404,
                         "USER_NOT_FOUND"
                 ));
@@ -61,22 +60,27 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(user.getUsername(), password)
         );
 
-        String token = jwtProvider.generateToken(user.getUsername());
-        logger.debug("[AuthService][Authenticate] Token generated for user {}: {}", user.getUsername(), token);
+        logger.debug("[AuthService][AuthenticateByUsername] User authenticated: {}", user.getUsername());
+        return user;
+    }
 
-        return token;
+    public User authenticateByEmail(String email, String password) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ServiceException(
+                        "User not found with email: " + email,
+                        404,
+                        "USER_NOT_FOUND"
+                ));
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getUsername(), password)
+        );
+
+        logger.debug("[AuthService][AuthenticateByEmail] User authenticated: {}", user.getUsername());
+        return user;
     }
 
     public boolean isUsernameAvailable(String username) {
         return !userRepository.existsByUsername(username);
-    }
-
-    public User findByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new ServiceException(
-                        "User not found with username: " + username,
-                        404,
-                        "USER_NOT_FOUND"
-                ));
     }
 }

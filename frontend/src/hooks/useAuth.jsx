@@ -1,6 +1,6 @@
 /* src/hooks/useAuth.jsx */
 import { createContext, useContext, useEffect, useState } from "react";
-import { login, register, logout, getCurrentUser } from "../services/api";
+import { login, register, getCurrentUser } from "../services/api";
 import { devLog } from "../utils/devLog";
 
 const AuthContext = createContext(null);
@@ -13,66 +13,77 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const init = async () => {
       const token = localStorage.getItem("jwtToken");
+      const storedUser = localStorage.getItem("user");
+
       if (!token) {
         setLoading(false);
         return;
       }
-      try {
-        devLog("Auth", "Fetching current user with saved token");
-        const { data } = await getCurrentUser();
-        setUser(data);
-      } catch (err) {
-        devLog("Auth", "Failed to fetch current user", err);
-        localStorage.removeItem("jwtToken");
-        setUser(null);
-      } finally {
+
+      if (storedUser) {
+        devLog("Auth", "Restoring user from localStorage");
+        setUser(JSON.parse(storedUser));
         setLoading(false);
+      } else {
+        try {
+          devLog("Auth", "Fetching current user with saved token");
+          const { data } = await getCurrentUser();
+          setUser(data);
+          localStorage.setItem("user", JSON.stringify(data));
+        } catch (err) {
+          devLog("Auth", "Failed to fetch current user", err);
+          localStorage.removeItem("jwtToken");
+          localStorage.removeItem("user");
+          setUser(null);
+        } finally {
+          setLoading(false);
+        }
       }
     };
     init();
   }, []);
 
-  // Login
-  const loginUser = async (identifier, password) => {
-    devLog("Auth", "Logging in user", { identifier, password: "***" });
+  // ✅ Login
+  const loginUser = async (payload) => {
+    devLog("Auth", "Logging in with payload", {
+      ...payload,
+      password: "***", // mask password
+    });
 
-    const data = {};
-    if (identifier.includes("@")) {
-      data.email = email;
-    } else {
-      data.username = username;
-    }
-    data.password = password;
+    const { data: res } = await login(payload);
+    devLog("Auth", "Login API response", res);
 
-    const { data: res } = await login(data); // <-- login API accepts full body now
-    console.log("[Auth login API response]", res);
-
+    // Save token + user
     localStorage.setItem("jwtToken", res.token);
+    localStorage.setItem("user", JSON.stringify(res.user || null));
     setUser(res.user || null);
-    return res;
+
+    return res; // { token, user }
   };
 
-  // Register
+  // ✅ Register
   const registerUser = async (creds) => {
-    devLog("Auth", "Registering user", creds);
-    const { data } = await register(creds);
-    devLog("Auth", "Register response", data);
+    devLog("Auth", "Registering user", {
+      ...creds,
+      password: "***", // mask password
+    });
 
-    // Save token first
-    localStorage.setItem("jwtToken", data.token);
+    const { data: res } = await register(creds);
+    devLog("Auth", "Register API response", res);
 
-    // Fetch user with token
-    const { data: userData } = await getCurrentUser();
-    setUser(userData);
+    // Save token + user
+    localStorage.setItem("jwtToken", res.token);
+    localStorage.setItem("user", JSON.stringify(res.user || null));
+    setUser(res.user || null);
+
+    return res; // { token, user }
   };
 
-  // Logout
-  const logoutUser = async () => {
+  // ✅ Logout (frontend only)
+  const logoutUser = () => {
     devLog("Auth", "Logging out user");
-    try {
-      await logout();
-    } catch (_) {}
     localStorage.removeItem("jwtToken");
+    localStorage.removeItem("user");
     setUser(null);
   };
 

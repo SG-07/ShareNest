@@ -1,5 +1,5 @@
 // src/pages/AddItem.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createItem } from "../services/api";
 import Loading from "../components/common/Loading";

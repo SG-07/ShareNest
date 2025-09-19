@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { toast } from "react-toastify";
@@ -7,7 +7,7 @@ import { devLog } from "../utils/devLog";
 
 export default function Login() {
   const { login } = useAuth();
-  const [creds, setCreds] = useState({ identifier: "", password: "" });
+  const [creds, setCreds] = useState({ username: "", password: "" });
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -20,11 +20,15 @@ export default function Login() {
     e.preventDefault();
     try {
       setBusy(true);
-      devLog("Login", "Sending credentials", creds);
-      const result = await login(creds.identifier, creds.password);
+
+      const payload = { username: creds.username, password: creds.password };
+      devLog("Login", "Prepared payload:", payload);
+
+      const result = await login(payload);
       console.log("[Login response]", result);
-      devLog("Login", "Login successful");
-      toast.success("Welcome back 👋");
+      devLog("Login", "Login successful", result.user);
+
+      toast.success(`Welcome back 👋 ${result.user?.name || ""}`);
       navigate(from, { replace: true });
     } catch (err) {
       devLog("Login", "Login failed", err);
@@ -43,18 +47,18 @@ export default function Login() {
         className="bg-white p-6 rounded shadow space-y-4"
       >
         <div>
-          <label htmlFor="identifier" className="block text-sm font-medium mb-1">
-            Email or Username
+          <label htmlFor="username" className="block text-sm font-medium mb-1">
+            Username
           </label>
           <input
-            id="identifier"
-            name="identifier"
-            value={creds.identifier}
+            id="username"
+            name="username"
+            value={creds.username}
             onChange={onChange}
             type="text"
             required
             className="w-full input"
-            placeholder="Enter email or username"
+            placeholder="Enter username"
           />
         </div>
 
@@ -92,3 +96,4 @@ export default function Login() {
     </div>
   );
 }
+
