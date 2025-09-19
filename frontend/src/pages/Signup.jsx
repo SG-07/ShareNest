@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { toast } from "react-toastify";
 import { devLog } from "../utils/devLog";
-import { checkUsername } from "../services/api";
+import { checkUsername, checkEmail } from "../services/api"; 
 
 export default function Signup() {
   const { register } = useAuth();
@@ -14,9 +14,16 @@ export default function Signup() {
     email: "",
     password: "",
   });
+
   const [busy, setBusy] = useState(false);
-  const [checking, setChecking] = useState(false);
+
+  // Username availability
+  const [checkingUsername, setCheckingUsername] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState(null);
+
+  // Email availability
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [emailAvailable, setEmailAvailable] = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,7 +32,9 @@ export default function Signup() {
   const onChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  // ✅ Debounced username availability check
+  /* -------------------------
+     Debounced Username Check
+     ------------------------- */
   useEffect(() => {
     if (!form.username) {
       setUsernameAvailable(null);
@@ -34,7 +43,7 @@ export default function Signup() {
 
     const handler = setTimeout(async () => {
       try {
-        setChecking(true);
+        setCheckingUsername(true);
         devLog("Signup", "Checking username availability:", form.username);
         const res = await checkUsername(form.username);
         console.log("[Username check response]", res.data);
@@ -44,21 +53,55 @@ export default function Signup() {
         devLog("Signup", "Username check failed", err);
         setUsernameAvailable(false);
       } finally {
-        setChecking(false);
+        setCheckingUsername(false);
       }
     }, 500);
 
     return () => clearTimeout(handler);
   }, [form.username]);
 
+  /* -------------------------
+     Debounced Email Check
+     ------------------------- */
+  useEffect(() => {
+    if (!form.email) {
+      setEmailAvailable(null);
+      return;
+    }
+
+    const handler = setTimeout(async () => {
+      try {
+        setCheckingEmail(true);
+        devLog("Signup", "Checking email availability:", form.email);
+        const res = await checkEmail(form.email);
+        console.log("[Email check response]", res.data);
+        devLog("Signup", "Email check response:", res.data);
+        setEmailAvailable(res.data?.available);
+      } catch (err) {
+        devLog("Signup", "Email check failed", err);
+        setEmailAvailable(false);
+      } finally {
+        setCheckingEmail(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [form.email]);
+
+  /* -------------------------
+     Submit
+     ------------------------- */
   const submit = async (e) => {
     e.preventDefault();
     try {
       setBusy(true);
       devLog("Signup", "Sending registration data:", form);
+
       const result = await register(form);
       console.log("[Signup response]", result);
-      toast.success("Account created and logged in 🎉");
+      devLog("Signup", "Signup successful", result.user);
+
+      toast.success(`Account created 🎉 Welcome, ${result.user?.name || ""}`);
       navigate(from, { replace: true });
     } catch (err) {
       devLog("Signup", "Registration failed", err);
@@ -104,7 +147,7 @@ export default function Signup() {
             required
             className="w-full input"
           />
-          {checking && (
+          {checkingUsername && (
             <p className="text-sm text-gray-500">Checking availability…</p>
           )}
           {usernameAvailable === false && (
@@ -129,6 +172,15 @@ export default function Signup() {
             required
             className="w-full input"
           />
+          {checkingEmail && (
+            <p className="text-sm text-gray-500">Checking availability…</p>
+          )}
+          {emailAvailable === false && (
+            <p className="text-sm text-red-500">❌ Email is already taken</p>
+          )}
+          {emailAvailable === true && (
+            <p className="text-sm text-green-600">✅ Email is available</p>
+          )}
         </div>
 
         {/* Password */}
@@ -152,9 +204,12 @@ export default function Signup() {
           <button
             disabled={
               busy ||
-              checking ||
+              checkingUsername ||
+              checkingEmail ||
               usernameAvailable === false ||
-              !usernameAvailable
+              emailAvailable === false ||
+              !usernameAvailable ||
+              !emailAvailable
             }
             className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -165,5 +220,3 @@ export default function Signup() {
     </div>
   );
 }
-
-
