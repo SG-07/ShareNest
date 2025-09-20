@@ -87,4 +87,26 @@ export const cancelRequest = (requestId) =>
 export const getMapItems = () => api.get("/map-items");
 export const getTrustScore = (userId) => api.get(`/trust-score/${userId}`);
 
+/* -------------------------
+   Geocoding
+   ------------------------- */
+export const geocodeAddress = async (address) => {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        address
+      )}`
+    );
+    const data = await res.json();
+
+    if (!data.length) {
+      throw new Error("No results found for the given address.");
+    }
+
+    return { lat: data[0].lat, lon: data[0].lon };
+  } catch (err) {
+    throw new Error(err.message || "Failed to geocode address");
+  }
+};
+
 export default api;

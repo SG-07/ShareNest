@@ -8,6 +8,8 @@ import "./App.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { SearchProvider } from "./context/SearchContext";
+import "leaflet/dist/leaflet.css";
+
 
 const root = createRoot(document.getElementById("root"));
 
