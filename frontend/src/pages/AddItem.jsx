@@ -9,7 +9,7 @@ import {
   useMapEvents,
 } from "react-leaflet";
 import L from "leaflet";
-import { createItem, geocodeAddress } from "../services/api";
+import { createItem, geocodeAddress, uploadImage } from "../services/api";
 import Loading from "../components/common/Loading";
 import ErrorBanner from "../components/common/Error";
 import { devLog } from "../utils/devLog";
@@ -32,7 +32,7 @@ export default function AddItem() {
     name: "",
     description: "",
     category: "",
-    condition: "good",
+    condition: "GOOD",
     available: true,
     street: "",
     city: "",
@@ -54,7 +54,7 @@ export default function AddItem() {
 
   const onFile = (e) => setImageFile(e.target.files?.[0] || null);
 
-  // 📍 Ask backend API to geocode
+  // 📍 Geocode address
   const handleGeocode = async () => {
     const address = `${form.street}, ${form.city}, ${form.state}, ${form.pincode}, ${form.country}`;
     try {
@@ -71,6 +71,7 @@ export default function AddItem() {
     }
   };
 
+  // 📤 Submit item
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
@@ -93,12 +94,25 @@ export default function AddItem() {
 
     try {
       setLoading(true);
-      const fd = new FormData();
-      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
-      if (imageFile) fd.append("image", imageFile);
 
-      devLog("AddItem", "Sending item data to API", form, imageFile);
-      const res = await createItem(fd);
+      let imageUrl = "";
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
+
+      const itemPayload = {
+        name: form.name,
+        description: form.description,
+        category: form.category,
+        condition: form.condition,
+        available: form.available,
+        latitude: form.latitude,
+        longitude: form.longitude,
+        imageUrl: imageUrl || null,
+      };
+
+      devLog("AddItem", "Sending item data to API", itemPayload);
+      const res = await createItem(itemPayload);
       devLog("AddItem", "Item created successfully", res.data);
 
       const id = res?.data?.id || res?.data?._id;
@@ -149,7 +163,6 @@ export default function AddItem() {
             },
           }}
         />
-        {/* Highlight circle around pin */}
         <Circle center={position} radius={100} pathOptions={{ color: "blue" }} />
       </>
     );
@@ -210,10 +223,10 @@ export default function AddItem() {
             onChange={onChange}
             className="w-full border rounded px-3 py-2"
           >
-            <option value="new">New</option>
-            <option value="good">Good</option>
-            <option value="fair">Fair</option>
-            <option value="poor">Poor</option>
+            <option value="NEW">New</option>
+            <option value="GOOD">Good</option>
+            <option value="FAIR">Fair</option>
+            <option value="POOR">Poor</option>
           </select>
         </div>
 

@@ -63,13 +63,38 @@ export const checkEmail = (email) =>
   api.get("/auth/check-email", { params: { email } });
 
 /* -------------------------
+   Cloudinary Upload
+   ------------------------- */
+export const uploadImage = async (file) => {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error("Missing Cloudinary env vars. Please set them in .env");
+  }
+
+  const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
+  const data = new FormData();
+  data.append("file", file);
+  data.append("upload_preset", uploadPreset);
+
+  devLog("API", "Uploading image to Cloudinary…");
+
+  const res = await axios.post(url, data);
+  devLog("API", "Image uploaded", res.data.secure_url);
+
+  return res.data.secure_url; // ✅ return hosted image URL
+};
+
+/* -------------------------
    Items
    ------------------------- */
 export const getItems = () => api.get("/items");
 export const getItem = (id) => api.get(`/items/${id}`);
-export const createItem = (formData) =>
-  api.post("/items", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+export const createItem = (payload) =>
+  api.post("/items", payload, {
+    headers: { "Content-Type": "application/json" },
   });
 
 /* -------------------------
