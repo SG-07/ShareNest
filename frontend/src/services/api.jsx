@@ -17,10 +17,19 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("jwtToken");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       devLog("API", "Attached JWT token to request");
     }
+
+    if (user?.roles?.length) {
+      const role = user.roles[0]; // ✅ take first role
+      config.headers["X-User-Role"] = role;
+      devLog("API", `Attached user role: ${role}`);
+    }
+
     return config;
   },
   (err) => Promise.reject(err)
@@ -39,7 +48,7 @@ api.interceptors.response.use(
       localStorage.removeItem("jwtToken");
       localStorage.removeItem("user");
 
-      // Optional: redirect to login
+      // Redirect to login
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
       }
@@ -51,41 +60,34 @@ api.interceptors.response.use(
 /* -------------------------
    Auth
    ------------------------- */
-export const register = (payload) => api.post("/auth/signup", payload);
-export const login = (payload) =>
-  api.post("/auth/login", payload, {
+const storeAuthData = (res) => {
+  if (res.data?.token) {
+    localStorage.setItem("jwtToken", res.data.token);
+    if (res.data.user) {
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+    }
+    devLog("API", "Stored token & user in localStorage");
+  }
+  return res;
+};
+
+export const register = async (payload) => {
+  const res = await api.post("/auth/signup", payload);
+  return storeAuthData(res);
+};
+
+export const login = async (payload) => {
+  const res = await api.post("/auth/login", payload, {
     headers: { "Content-Type": "application/json" },
   });
+  return storeAuthData(res);
+};
+
 export const getCurrentUser = () => api.get("/auth/me");
 export const checkUsername = (username) =>
   api.get("/auth/check-username", { params: { username } });
 export const checkEmail = (email) =>
   api.get("/auth/check-email", { params: { email } });
-
-/* -------------------------
-   Cloudinary Upload
-   ------------------------- */
-export const uploadImage = async (file) => {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Missing Cloudinary env vars. Please set them in .env");
-  }
-
-  const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
-
-  const data = new FormData();
-  data.append("file", file);
-  data.append("upload_preset", uploadPreset);
-
-  devLog("API", "Uploading image to Cloudinary…");
-
-  const res = await axios.post(url, data);
-  devLog("API", "Image uploaded", res.data.secure_url);
-
-  return res.data.secure_url; // ✅ return hosted image URL
-};
 
 /* -------------------------
    Items
@@ -115,11 +117,12 @@ export const getTrustScore = (userId) => api.get(`/trust-score/${userId}`);
 /* -------------------------
    Geocoding
    ------------------------- */
-export const geocodeAddress = async (address) => {
+export const geocodeAddress = async ({ pincode, state, country }) => {
   try {
+    const query = `${pincode}, ${state}, ${country}`;
     const res = await fetch(
       `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-        address
+        query
       )}`
     );
     const data = await res.json();
@@ -128,7 +131,7 @@ export const geocodeAddress = async (address) => {
       throw new Error("No results found for the given address.");
     }
 
-    return { lat: data[0].lat, lon: data[0].lon };
+    return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
   } catch (err) {
     throw new Error(err.message || "Failed to geocode address");
   }
