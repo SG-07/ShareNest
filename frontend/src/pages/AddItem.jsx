@@ -1,5 +1,5 @@
 // src/pages/AddItem.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   MapContainer,
@@ -7,19 +7,21 @@ import {
   Marker,
   Circle,
   useMapEvents,
+  useMap,
 } from "react-leaflet";
 import L from "leaflet";
 import { createItem, geocodeAddress, uploadImage } from "../services/api";
 import Loading from "../components/common/Loading";
 import ErrorBanner from "../components/common/Error";
 import { devLog } from "../utils/devLog";
+import { toast } from "react-toastify";
 
 import "leaflet/dist/leaflet.css";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-// ✅ Fix Leaflet icons not showing in React
+// Fix Leaflet icons not showing in React
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
@@ -54,11 +56,20 @@ export default function AddItem() {
 
   const onFile = (e) => setImageFile(e.target.files?.[0] || null);
 
-  // 📍 Geocode address
+  // Geocode using only pincode + state + country
   const handleGeocode = async () => {
-    const address = `${form.street}, ${form.city}, ${form.state}, ${form.pincode}, ${form.country}`;
+    setError(null);
+    if (!form.pincode || !form.state || !form.country) {
+      setError("Please provide pincode, state and country to locate on map.");
+      toast.error("Pincode, state and country required!", { autoClose: 3000 });
+      return;
+    }
     try {
-      const { lat, lon } = await geocodeAddress(address);
+      const { lat, lon } = await geocodeAddress(
+        form.pincode.trim(),
+        form.state.trim(),
+        form.country.trim()
+      );
       setForm((f) => ({
         ...f,
         latitude: parseFloat(lat),
@@ -66,38 +77,39 @@ export default function AddItem() {
       }));
       devLog("AddItem", "Geocode success", lat, lon);
     } catch (err) {
-      setError(err.message || "Failed to geocode address");
+      const msg = err?.message || "Failed to fetch location.";
+      setError(msg);
       devLog("AddItem", "Geocode failed", err);
+      toast.error(msg, { autoClose: 3000 });
     }
   };
 
-  // 📤 Submit item
+  // Submit item
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    if (
-      !form.street ||
-      !form.city ||
-      !form.state ||
-      !form.country ||
-      !form.pincode
-    ) {
-      setError("Please provide complete address.");
+    if (!form.pincode || !form.state || !form.country) {
+      setError("Please provide pincode, state and country.");
+      toast.error("Please provide pincode, state and country.", { autoClose: 3000 });
       return;
     }
 
     if (!form.latitude || !form.longitude) {
       await handleGeocode();
-      if (!form.latitude || !form.longitude) return;
+      if (!form.latitude || !form.longitude) {
+        // geocode failed
+        return;
+      }
     }
 
     try {
       setLoading(true);
 
-      let imageUrl = "";
+      let imageUrl = null;
       if (imageFile) {
         imageUrl = await uploadImage(imageFile);
+        devLog("AddItem", "Image uploaded, url:", imageUrl);
       }
 
       const itemPayload = {
@@ -106,8 +118,8 @@ export default function AddItem() {
         category: form.category,
         condition: form.condition,
         available: form.available,
-        latitude: form.latitude,
-        longitude: form.longitude,
+        latitude: parseFloat(form.latitude),
+        longitude: parseFloat(form.longitude),
         imageUrl: imageUrl || null,
       };
 
@@ -115,23 +127,39 @@ export default function AddItem() {
       const res = await createItem(itemPayload);
       devLog("AddItem", "Item created successfully", res.data);
 
+      toast.success("Item added successfully!", { autoClose: 3000 });
+
       const id = res?.data?.id || res?.data?._id;
-      navigate(id ? `/items/${id}` : "/");
+      setTimeout(() => {
+        navigate(id ? `/items/${id}` : "/");
+      }, 700);
     } catch (err) {
       devLog("AddItem", "Failed to create item", err);
-      setError(
-        err?.response?.data?.message || err.message || "Failed to create item"
-      );
+      const msg =
+        err?.response?.data?.message || err.message || "Failed to create item";
+      setError(msg);
+      toast.error(msg, { autoClose: 3000 });
     } finally {
       setLoading(false);
     }
   };
 
-  // 📍 Draggable + Clickable marker
+  // Marker logic
   const LocationMarker = () => {
-    const [position, setPosition] = useState(
-      form.latitude && form.longitude ? [form.latitude, form.longitude] : null
-    );
+    const map = useMap();
+
+    const position =
+      form.latitude && form.longitude
+        ? [Number(form.latitude), Number(form.longitude)]
+        : null;
+
+    useEffect(() => {
+      if (position && map) {
+        try {
+          map.flyTo(position, 14, { duration: 0.7 });
+        } catch (err) {}
+      }
+    }, [position, map]);
 
     useMapEvents({
       click(e) {
@@ -141,7 +169,6 @@ export default function AddItem() {
         );
         if (confirmUpdate) {
           setForm((f) => ({ ...f, latitude: lat, longitude: lng }));
-          setPosition([lat, lng]);
           devLog("AddItem", "Map clicked, location updated", lat, lng);
         }
       },
@@ -152,12 +179,11 @@ export default function AddItem() {
     return (
       <>
         <Marker
-          draggable={true}
+          draggable
           position={position}
           eventHandlers={{
             dragend: (e) => {
               const { lat, lng } = e.target.getLatLng();
-              setPosition([lat, lng]);
               setForm((f) => ({ ...f, latitude: lat, longitude: lng }));
               devLog("AddItem", "Marker dragged, new position", lat, lng);
             },
@@ -176,10 +202,7 @@ export default function AddItem() {
 
       {error && <ErrorBanner message={error} />}
 
-      <form
-        onSubmit={submit}
-        className="bg-white p-6 rounded shadow space-y-4"
-      >
+      <form onSubmit={submit} className="bg-white p-6 rounded shadow space-y-4">
         {/* Basic Info */}
         <div>
           <label className="block font-medium mb-1">Name</label>
@@ -241,29 +264,30 @@ export default function AddItem() {
           <label>Available</label>
         </div>
 
-        {/* 📍 Address */}
+        {/* Address */}
         <h2 className="text-lg font-semibold mt-4">Location</h2>
+
         <div>
-          <label className="block font-medium mb-1">Street</label>
+          <label className="block font-medium mb-1">Street (optional)</label>
           <input
             type="text"
             name="street"
             value={form.street}
             onChange={onChange}
             className="w-full border rounded px-3 py-2"
-            required
+            placeholder="Optional: used for display only"
           />
         </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block font-medium mb-1">City</label>
+            <label className="block font-medium mb-1">City (optional)</label>
             <input
               type="text"
               name="city"
               value={form.city}
               onChange={onChange}
               className="w-full border rounded px-3 py-2"
-              required
             />
           </div>
           <div>
@@ -278,6 +302,7 @@ export default function AddItem() {
             />
           </div>
         </div>
+
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block font-medium mb-1">Country</label>
@@ -308,16 +333,16 @@ export default function AddItem() {
           onClick={handleGeocode}
           className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
         >
-          Locate on Map
+          Locate on Map (uses pincode + state + country)
         </button>
 
-        {/* 📍 Map Preview */}
+        {/* Map Preview */}
         <div className="mt-4">
           <h3 className="font-medium mb-2">Preview Location</h3>
           <MapContainer
             center={
               form.latitude && form.longitude
-                ? [form.latitude, form.longitude]
+                ? [Number(form.latitude), Number(form.longitude)]
                 : [20.5937, 78.9629]
             }
             zoom={form.latitude && form.longitude ? 14 : 4}
@@ -330,7 +355,7 @@ export default function AddItem() {
             <LocationMarker />
           </MapContainer>
           <p className="text-sm text-gray-500 mt-1">
-            Click anywhere on the map to set the pin (confirmation required) or drag the marker to fine-tune.
+            Click on map to set pin or drag the marker to fine-tune.
           </p>
         </div>
 
@@ -356,3 +381,6 @@ export default function AddItem() {
     </div>
   );
 }
+
+
+
