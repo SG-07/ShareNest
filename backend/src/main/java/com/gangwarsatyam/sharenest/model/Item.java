@@ -1,8 +1,8 @@
 package com.gangwarsatyam.sharenest.model;
 
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import lombok.*;
 
 @Document(collection = "items")
 @Getter
@@ -17,16 +17,23 @@ public class Item {
 
     private String name;
     private String description;
-    private int quantity;
+    private int quantity = 1; // keep default if needed
 
     private String ownerId; // User ID of the item owner
     private String category;
 
-    private ItemCondition condition; // ✅ enum reference
+    private ItemCondition condition; // enum
 
     private double latitude;
     private double longitude;
 
-    private boolean available = true; // ✅ default available
+    private boolean available = true;
     private String imageUrl;
+
+    // Address fields
+    private String city;
+    private String state;
+    private String country;
+    private String street;
+    private String pincode;
 }

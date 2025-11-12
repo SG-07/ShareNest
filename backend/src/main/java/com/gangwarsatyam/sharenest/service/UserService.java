@@ -23,13 +23,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // Inject PasswordEncoder (defined as BCryptPasswordEncoder bean in SecurityConfig)
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
-    public java.util.List<User> findAllUsers() {
+    public List<User> findAllUsers() {
         if (debug) logger.debug("Fetching all users");
         return userRepository.findAll();
     }
@@ -76,6 +76,9 @@ public class UserService {
                 .name(dto.getName())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .roles(List.of("ROLE_USER"))
+                .lendCount(0)
+                .borrowCount(0)
+                .trustScore(0.0)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -83,5 +86,37 @@ public class UserService {
         if (debug) logger.debug("User registered successfully with id: {}", savedUser.getId());
 
         return savedUser;
+    }
+
+    // ------------------------------
+    // 🚀 Trust/Lend/Borrow Management
+    // ------------------------------
+
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ServiceException("User not found: " + username, 404, "USER_NOT_FOUND"));
+    }
+
+    public void increaseLendCount(String username) {
+        User user = getUserByUsername(username);
+        user.setLendCount(user.getLendCount() + 1);
+        updateTrustScore(user);
+        userRepository.save(user);
+        if (debug) logger.debug("Lend count increased for user: {}", username);
+    }
+
+    public void increaseBorrowCount(String username) {
+        User user = getUserByUsername(username);
+        user.setBorrowCount(user.getBorrowCount() + 1);
+        updateTrustScore(user);
+        userRepository.save(user);
+        if (debug) logger.debug("Borrow count increased for user: {}", username);
+    }
+
+    private void updateTrustScore(User user) {
+        // Simple formula (can be made more complex later)
+        double score = (user.getLendCount() + user.getBorrowCount()) * 0.5;
+        user.setTrustScore(score);
+        if (debug) logger.debug("Trust score updated for {}: {}", user.getUsername(), score);
     }
 }
