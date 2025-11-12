@@ -6,20 +6,7 @@
   <component name="ChangeListManager">
     <list default="true" id="e6b8b892-49c3-4840-967c-535e4565f10b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/config/JwtFilter.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/config/JwtFilter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/config/SecurityConfig.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/controller/AuthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/controller/AuthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/controller/HealthController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/controller/HealthController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/controller/ItemController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/controller/ItemController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/dto/ItemDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/dto/ItemDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/dto/UserDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/dto/UserDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/dto/UserRegistrationDto.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/dto/UserRegistrationDto.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/model/Item.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/model/Item.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/model/User.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/service/AuthService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/service/AuthService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/service/CustomUserDetailsService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/service/CustomUserDetailsService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/service/ItemService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/service/ItemService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/service/UserService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/gangwarsatyam/sharenest/service/UserService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/.gitignore" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -31,6 +18,9 @@
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="QODANA_PROBLEMS_VIEW_TAB" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 8
