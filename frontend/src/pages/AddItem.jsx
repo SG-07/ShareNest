@@ -89,9 +89,26 @@ export default function AddItem() {
     e.preventDefault();
     setError(null);
 
+    // Validate required fields
+    if (!form.name) {
+      toast.error("Item name is required.", { autoClose: 3000 });
+      return;
+    }
     if (!form.pincode || !form.state || !form.country) {
       setError("Please provide pincode, state and country.");
       toast.error("Please provide pincode, state and country.", { autoClose: 3000 });
+      return;
+    }
+    if (!imageFile) {
+      toast.error("Please upload an image for the item.", { autoClose: 3000 });
+      return;
+    }
+
+    // Check authentication
+    const user = JSON.parse(localStorage.getItem("user"));
+    const token = localStorage.getItem("token");
+    if (!user || !token) {
+      toast.error("You must be logged in to add an item.", { autoClose: 3000 });
       return;
     }
 
@@ -106,12 +123,12 @@ export default function AddItem() {
     try {
       setLoading(true);
 
-      let imageUrl = null;
-      if (imageFile) {
-        imageUrl = await uploadImage(imageFile);
-        devLog("AddItem", "Image uploaded, url:", imageUrl);
-      }
+      // Upload image (required)
+      devLog("API", "Uploading image to Cloudinary…");
+      const imageUrl = await uploadImage(imageFile);
+      devLog("AddItem", "Image uploaded, url:", imageUrl);
 
+      // Prepare payload with ownerId
       const itemPayload = {
         name: form.name,
         description: form.description,
@@ -120,7 +137,13 @@ export default function AddItem() {
         available: form.available,
         latitude: parseFloat(form.latitude),
         longitude: parseFloat(form.longitude),
-        imageUrl: imageUrl || null,
+        imageUrl,
+        street: form.street,
+        city: form.city,
+        state: form.state,
+        country: form.country,
+        pincode: form.pincode,
+        ownerId: user?.id || user?._id, // ✅ added ownerId from logged-in user
       };
 
       devLog("AddItem", "Sending item data to API", itemPayload);
@@ -268,20 +291,19 @@ export default function AddItem() {
         <h2 className="text-lg font-semibold mt-4">Location</h2>
 
         <div>
-          <label className="block font-medium mb-1">Street (optional)</label>
+          <label className="block font-medium mb-1">House/Colony</label>
           <input
             type="text"
             name="street"
             value={form.street}
             onChange={onChange}
             className="w-full border rounded px-3 py-2"
-            placeholder="Optional: used for display only"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block font-medium mb-1">City (optional)</label>
+            <label className="block font-medium mb-1">City</label>
             <input
               type="text"
               name="city"
@@ -333,7 +355,7 @@ export default function AddItem() {
           onClick={handleGeocode}
           className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
         >
-          Locate on Map (uses pincode + state + country)
+          Locate on Map 
         </button>
 
         {/* Map Preview */}
@@ -367,6 +389,7 @@ export default function AddItem() {
             accept="image/*"
             onChange={onFile}
             className="w-full"
+            required
           />
         </div>
 
@@ -381,6 +404,3 @@ export default function AddItem() {
     </div>
   );
 }
-
-
-
