@@ -35,7 +35,9 @@ export default function ItemDetails() {
       }
     }
     fetchItem();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
   const handleRequest = async () => {
@@ -52,7 +54,9 @@ export default function ItemDetails() {
       devLog("ItemDetails", "Request failed", err);
       console.error("Request failed", err);
       setError(
-        err?.response?.data?.message || err.message || "Unable to create request"
+        err?.response?.data?.message ||
+          err.message ||
+          "Unable to create request"
       );
     } finally {
       setRequesting(false);
@@ -65,7 +69,46 @@ export default function ItemDetails() {
 
   return (
     <div className="max-w-4xl mx-auto px-4">
-      {/* display code unchanged */}
+      <div className="bg-white rounded shadow p-6">
+        <div className="md:flex gap-6">
+          <img
+            src={item.image || "/placeholder-item.png"}
+            alt={item.name || "Item"}
+            className="w-full md:w-1/2 h-80 object-cover rounded"
+          />
+          <div className="mt-4 md:mt-0 md:flex-1">
+            <h2 className="text-2xl font-semibold">{item.name}</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {item.category || "Uncategorized"}
+            </p>
+            <p className="mt-4 text-gray-700">{item.description}</p>
+
+            <div className="mt-6 flex items-center gap-4">
+              <span
+                className={`px-3 py-1 rounded text-sm ${
+                  item.available
+                    ? "bg-green-100 text-green-800"
+                    : "bg-red-100 text-red-800"
+                }`}
+              >
+                {item.available ? "Available" : "Unavailable"}
+              </span>
+
+              <button
+                onClick={handleRequest}
+                disabled={!item.available || requesting}
+                className="ml-auto btn-primary disabled:opacity-60"
+              >
+                {requesting ? "Requesting…" : "Request to Borrow"}
+              </button>
+            </div>
+
+            {successMsg && (
+              <div className="mt-4 text-green-700">{successMsg}</div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

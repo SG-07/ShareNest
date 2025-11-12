@@ -1,13 +1,13 @@
 package com.gangwarsatyam.sharenest.service;
 
-import com.gangwarsatyam.sharenest.dto.AuthResponse;
 import com.gangwarsatyam.sharenest.dto.UserDto;
 import com.gangwarsatyam.sharenest.dto.UserRegistrationDto;
-import com.gangwarsatyam.sharenest.exception.BadRequestException;
-import com.gangwarsatyam.sharenest.exception.UnauthorizedException;
+import com.gangwarsatyam.sharenest.dto.AuthResponse;
 import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
+import com.gangwarsatyam.sharenest.security.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -15,70 +15,65 @@ import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final JwtProvider jwtProvider;
 
     public AuthResponse signup(UserRegistrationDto dto) {
-        // Check username/email uniqueness
+        log.debug("[AuthService] Signup attempt for username: {}", dto.getUsername());
+
         if (userRepository.existsByUsername(dto.getUsername())) {
-            throw new BadRequestException("Username already exists");
-        }
-        if (dto.getEmail() != null && userRepository.existsByEmail(dto.getEmail())) {
-            throw new BadRequestException("Email already exists");
+            throw new RuntimeException("Username already taken");
         }
 
-        // Create new user
-        User user = new User();
-        user.setUsername(dto.getUsername());
-        user.setEmail(dto.getEmail()); // optional, can be null
-        user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        user.setName(dto.getName());
-        user.setRoles(Collections.singletonList("ROLE_USER"));
+        if (userRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("Email already taken");
+        }
+
+        User user = User.builder()
+                .username(dto.getUsername())
+                .password(passwordEncoder.encode(dto.getPassword()))
+                .email(dto.getEmail())
+                .name(dto.getName())
+                .roles(Collections.singletonList("ROLE_USER"))
+                .build();
 
         userRepository.save(user);
 
-        // Generate JWT token
-        String token = jwtService.generateToken(user);
+        String token = jwtProvider.generateToken(user.getUsername());
+        log.debug("[AuthService] Token generated: {}", token);
 
-        // Map to safe DTO
-        UserDto userDto = new UserDto(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getName(),
-                user.getTrustScore()
-        );
-
-        return new AuthResponse(token, userDto);
+        return new AuthResponse(token, mapToDto(user));
     }
 
     public AuthResponse login(String username, String password) {
-        // ✅ Fetch user by ONLY username
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        log.debug("[AuthService] Login attempt for username/email: {}", username);
 
-        // Validate password
+        User user = userRepository.findByUsername(username)
+                .or(() -> userRepository.findByEmail(username))
+                .orElseThrow(() -> new RuntimeException("Invalid username or email"));
+
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new UnauthorizedException("Invalid credentials");
+            throw new RuntimeException("Invalid password");
         }
 
-        // Generate JWT token
-        String token = jwtService.generateToken(user);
+        String token = jwtProvider.generateToken(user.getUsername());
+        log.debug("[AuthService] Token generated: {}", token);
 
-        // Map to safe DTO
-        UserDto userDto = new UserDto(
+        return new AuthResponse(token, mapToDto(user));
+    }
+
+    private UserDto mapToDto(User user) {
+        return new UserDto(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getName(),
-                user.getTrustScore()
+                user.getTrustScore(),
+                user.getRoles()
         );
-
-        return new AuthResponse(token, userDto);
     }
 }
-
-

@@ -25,7 +25,7 @@ api.interceptors.request.use(
     }
 
     if (user?.roles?.length) {
-      const role = user.roles[0]; // ✅ take first role
+      const role = user.roles[0];
       config.headers["X-User-Role"] = role;
       devLog("API", `Attached user role: ${role}`);
     }
@@ -44,11 +44,9 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       devLog("API", "401 Unauthorized → clearing token & user");
 
-      // Clear auth data
       localStorage.removeItem("jwtToken");
       localStorage.removeItem("user");
 
-      // Redirect to login
       if (window.location.pathname !== "/login") {
         window.location.href = "/login";
       }
@@ -90,6 +88,31 @@ export const checkEmail = (email) =>
   api.get("/auth/check-email", { params: { email } });
 
 /* -------------------------
+   Cloudinary Upload
+   ------------------------- */
+export const uploadImage = async (file) => {
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+  if (!cloudName || !uploadPreset) {
+    throw new Error("Missing Cloudinary env vars. Please set them in .env");
+  }
+
+  const url = `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`;
+
+  const data = new FormData();
+  data.append("file", file);
+  data.append("upload_preset", uploadPreset);
+
+  devLog("API", "Uploading image to Cloudinary…");
+
+  const res = await axios.post(url, data);
+  devLog("API", "Image uploaded", res.data.secure_url);
+
+  return res.data.secure_url; // ✅ hosted image URL
+};
+
+/* -------------------------
    Items
    ------------------------- */
 export const getItems = () => api.get("/items");
@@ -115,9 +138,9 @@ export const getMapItems = () => api.get("/map-items");
 export const getTrustScore = (userId) => api.get(`/trust-score/${userId}`);
 
 /* -------------------------
-   Geocoding
+   Geocoding (pincode + state + country)
    ------------------------- */
-export const geocodeAddress = async ({ pincode, state, country }) => {
+export const geocodeAddress = async (pincode, state, country) => {
   try {
     const query = `${pincode}, ${state}, ${country}`;
     const res = await fetch(
@@ -128,7 +151,7 @@ export const geocodeAddress = async ({ pincode, state, country }) => {
     const data = await res.json();
 
     if (!data.length) {
-      throw new Error("No results found for the given address.");
+      throw new Error("No results found for the given location.");
     }
 
     return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };

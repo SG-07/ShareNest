@@ -19,20 +19,27 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
 
-    // ✅ Fetch all items (for map display)
+    // Fetch all items (for map display)
     public List<Item> getAllItems() {
         logger.debug("[ItemService] Fetching ALL items (map view)");
         return itemRepository.findAll();
     }
 
-    // ✅ Add item
+    // ✅ Fetch single item by ID
+    public Item getItemById(String id) {
+        logger.debug("[ItemService] Fetching item by id: {}", id);
+        return itemRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Item not found with id: " + id));
+    }
+
+    // Add item
     public Item addItem(Item item, String username) {
         String ownerId = userRepository.findByUsername(username)
                 .map(u -> u.getId())
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         item.setOwnerId(ownerId);
-        item.setAvailable(true);
+        item.setAvailable(item.isAvailable());
 
         Item saved = itemRepository.save(item);
         logger.debug("[ItemService] Added new item '{}' for user '{}' (ownerId={})",
@@ -40,13 +47,13 @@ public class ItemService {
         return saved;
     }
 
-    // ✅ Fetch all available items
+    // Fetch all available items
     public List<Item> getAllAvailableItems() {
         logger.debug("[ItemService] Fetching all available items");
         return itemRepository.findByAvailableTrue();
     }
 
-    // ✅ Update item (only owner can update)
+    // Update item (only owner can update)
     public Item updateItem(String itemId, Item updatedItem, String username) {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
@@ -66,6 +73,13 @@ public class ItemService {
         item.setLatitude(updatedItem.getLatitude());
         item.setLongitude(updatedItem.getLongitude());
         item.setAvailable(updatedItem.isAvailable());
+        item.setImageUrl(updatedItem.getImageUrl());
+
+        item.setCity(updatedItem.getCity());
+        item.setState(updatedItem.getState());
+        item.setCountry(updatedItem.getCountry());
+        item.setStreet(updatedItem.getStreet());
+        item.setPincode(updatedItem.getPincode());
 
         Item saved = itemRepository.save(item);
         logger.debug("[ItemService] Updated item '{}' for user '{}' (ownerId={})",
@@ -73,7 +87,7 @@ public class ItemService {
         return saved;
     }
 
-    // ✅ Delete item (only owner can delete)
+    // Delete item (only owner can delete)
     public void deleteItem(String itemId, String username) {
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
@@ -91,7 +105,7 @@ public class ItemService {
                 item.getName(), username, ownerId);
     }
 
-    // ✅ Get logged-in user's items
+    // Get logged-in user's items
     public List<Item> getMyItems(String username) {
         String ownerId = userRepository.findByUsername(username)
                 .map(u -> u.getId())
@@ -101,7 +115,7 @@ public class ItemService {
         return itemRepository.findByOwnerId(ownerId);
     }
 
-    // ✅ Get logged-in user's available items
+    // Get logged-in user's available items
     public List<Item> getMyAvailableItems(String username) {
         String ownerId = userRepository.findByUsername(username)
                 .map(u -> u.getId())

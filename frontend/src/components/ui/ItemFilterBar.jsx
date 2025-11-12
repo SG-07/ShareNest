@@ -1,3 +1,4 @@
+// src/components/ui/ItemFilterBar.jsx
 import { useState } from "react";
 
 export default function ItemFilterBar({ onFilter }) {

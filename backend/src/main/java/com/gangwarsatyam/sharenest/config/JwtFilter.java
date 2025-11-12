@@ -8,22 +8,22 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class JwtFilter extends OncePerRequestFilter {
-
-    private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
 
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
@@ -34,27 +34,29 @@ public class JwtFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
             String token = getJwtFromRequest(request);
+
             if (StringUtils.hasText(token) && jwtProvider.validate(token)) {
                 String username = jwtProvider.getUsername(token);
 
                 User user = userRepository.findByUsername(username)
                         .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-                // ✅ Use username as principal (not the whole User object)
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                username, // principal is username
+                                user.getUsername(),
                                 null,
-                                user.getAuthorities()
+                                user.getRoles().stream()
+                                        .map(SimpleGrantedAuthority::new)
+                                        .collect(Collectors.toList())
                         );
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                logger.debug("[JwtFilter] Authenticated user: {}", username);
+                log.debug("[JwtFilter] Authenticated user: {}", username);
             }
         } catch (Exception ex) {
-            logger.error("[JwtFilter] Could not set user authentication in security context", ex);
+            log.error("[JwtFilter] Could not set authentication", ex);
         }
 
         filterChain.doFilter(request, response);
