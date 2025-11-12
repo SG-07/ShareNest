@@ -29,6 +29,7 @@ public class SecurityConfig {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
     private final AppProperties appProperties;
+    private CorsFilter corsFilter;
 
     public SecurityConfig(JwtProvider jwtProvider, UserRepository userRepository, AppProperties appProperties) {
         this.jwtProvider = jwtProvider;
@@ -42,7 +43,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/health").permitAll()
+                        .requestMatchers("/", "/healthz").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/check-username", "/api/auth/check-email").permitAll()
 
@@ -97,14 +98,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsFilter corsFilter() {
+    public CorsFilter corsFilter(AppProperties appProperties) {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
+        config.setAllowedOriginPatterns(appProperties.getFrontendUrl());
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowedMethods(List.of("*"));
-        config.setAllowedOrigins(appProperties.getFrontendUrl());
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
