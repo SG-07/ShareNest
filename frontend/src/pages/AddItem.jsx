@@ -96,7 +96,9 @@ export default function AddItem() {
     }
     if (!form.pincode || !form.state || !form.country) {
       setError("Please provide pincode, state and country.");
-      toast.error("Please provide pincode, state and country.", { autoClose: 3000 });
+      toast.error("Please provide pincode, state and country.", {
+        autoClose: 3000,
+      });
       return;
     }
     if (!imageFile) {
@@ -106,7 +108,7 @@ export default function AddItem() {
 
     // Check authentication
     const user = JSON.parse(localStorage.getItem("user"));
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("jwtToken");
     if (!user || !token) {
       toast.error("You must be logged in to add an item.", { autoClose: 3000 });
       return;
@@ -212,7 +214,11 @@ export default function AddItem() {
             },
           }}
         />
-        <Circle center={position} radius={100} pathOptions={{ color: "blue" }} />
+        <Circle
+          center={position}
+          radius={100}
+          pathOptions={{ color: "blue" }}
+        />
       </>
     );
   };
@@ -355,7 +361,7 @@ export default function AddItem() {
           onClick={handleGeocode}
           className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
         >
-          Locate on Map 
+          Locate on Map
         </button>
 
         {/* Map Preview */}
