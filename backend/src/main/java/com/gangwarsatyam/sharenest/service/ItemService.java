@@ -7,8 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -20,7 +19,7 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
 
-    // Fetch all items (for map display)
+    // ✅ Fetch all items (for map display)
     public List<Item> getAllItems() {
         logger.debug("[ItemService] Fetching ALL items (map view)");
         return itemRepository.findAll();
@@ -40,9 +39,14 @@ public class ItemService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         item.setOwnerId(ownerId);
-        item.setAvailable(item.isAvailable());
-        item.setCreatedAt(new Date());
-        item.setUpdatedAt(new Date());
+
+        // Initialize optional fields
+        if (item.getImageUrls() == null) item.setImageUrls(new ArrayList<>());
+        if (item.getTags() == null) item.setTags(new ArrayList<>());
+
+        item.setViews(0);
+        item.setLikes(0);
+        item.setAvailable(true);
 
         Item saved = itemRepository.save(item);
         logger.debug("[ItemService] Added new item '{}' for user '{}' (ownerId={})",
@@ -65,19 +69,21 @@ public class ItemService {
 
         item.setName(updatedItem.getName());
         item.setDescription(updatedItem.getDescription());
+        item.setQuantity(updatedItem.getQuantity());
         item.setCategory(updatedItem.getCategory());
         item.setCondition(updatedItem.getCondition());
+        item.setAvailable(updatedItem.isAvailable());
+        item.setImageUrls(updatedItem.getImageUrls() != null ? updatedItem.getImageUrls() : new ArrayList<>());
+        item.setTags(updatedItem.getTags() != null ? updatedItem.getTags() : new ArrayList<>());
         item.setLatitude(updatedItem.getLatitude());
         item.setLongitude(updatedItem.getLongitude());
-        item.setAvailable(updatedItem.isAvailable());
-        item.setImageUrls(updatedItem.getImageUrls());
-        item.setTags(updatedItem.getTags());
         item.setCity(updatedItem.getCity());
         item.setState(updatedItem.getState());
         item.setCountry(updatedItem.getCountry());
         item.setStreet(updatedItem.getStreet());
         item.setPincode(updatedItem.getPincode());
-        item.setUpdatedAt(new Date());
+
+        // Auditing automatically updates updatedAt
 
         Item saved = itemRepository.save(item);
         logger.debug("[ItemService] Updated item '{}' for user '{}' (ownerId={})",

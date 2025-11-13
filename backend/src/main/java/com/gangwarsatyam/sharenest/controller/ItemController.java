@@ -125,19 +125,21 @@ public class ItemController {
         item.setDescription(dto.getDescription());
         item.setCategory(dto.getCategory());
 
-        if (dto.getCondition() != null) {
-            try {
+        try {
+            if (dto.getCondition() != null) {
                 item.setCondition(ItemCondition.valueOf(dto.getCondition().trim().toUpperCase()));
-            } catch (IllegalArgumentException ex) {
-                throw new BadRequestException("Invalid condition value: " + dto.getCondition());
             }
+        } catch (IllegalArgumentException ex) {
+            throw new BadRequestException("Invalid condition value: " + dto.getCondition());
         }
 
         item.setLatitude(dto.getLatitude() != null ? dto.getLatitude() : 0.0);
         item.setLongitude(dto.getLongitude() != null ? dto.getLongitude() : 0.0);
         item.setAvailable(dto.getAvailable() != null ? dto.getAvailable() : true);
+
         item.setImageUrls(dto.getFiles());
         item.setTags(dto.getTags());
+
         item.setCity(dto.getCity());
         item.setState(dto.getState());
         item.setCountry(dto.getCountry());
@@ -146,4 +148,5 @@ public class ItemController {
 
         return item;
     }
+
 }
