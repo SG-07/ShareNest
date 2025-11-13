@@ -29,12 +29,14 @@ public class SecurityConfig {
     private final JwtProvider jwtProvider;
     private final UserRepository userRepository;
     private final AppProperties appProperties;
-    private CorsFilter corsFilter;
+    private final JwtFilter jwtFilter;
 
-    public SecurityConfig(JwtProvider jwtProvider, UserRepository userRepository, AppProperties appProperties) {
+    public SecurityConfig(JwtProvider jwtProvider, UserRepository userRepository,
+                          AppProperties appProperties, JwtFilter jwtFilter) {
         this.jwtProvider = jwtProvider;
         this.userRepository = userRepository;
         this.appProperties = appProperties;
+        this.jwtFilter = jwtFilter;
     }
 
     @Bean
@@ -46,32 +48,14 @@ public class SecurityConfig {
                         .requestMatchers("/", "/healthz").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/check-username", "/api/auth/check-email").permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/refresh").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/items/**", "/api/trust-score/**", "/api/map-items").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/items/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/items/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/items/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
                 )
 
                 .sessionManagement(session -> session.sessionCreationPolicy(
                         org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
 
-                .addFilterBefore(new JwtFilter(jwtProvider, userRepository),
-                        UsernamePasswordAuthenticationFilter.class)
-
-                .addFilterAfter((request, response, chain) -> {
-                    var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-                    if (auth != null && auth.isAuthenticated() && request instanceof HttpServletRequest httpReq) {
-                        log.debug("[SecurityConfig] User '{}' with roles {} accessed {} {}",
-                                auth.getName(),
-                                auth.getAuthorities(),
-                                httpReq.getMethod(),
-                                httpReq.getRequestURI());
-                    }
-                    chain.doFilter(request, response);
-                }, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable());
@@ -98,12 +82,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public CorsFilter corsFilter(AppProperties appProperties) {
+    public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOriginPatterns(appProperties.getFrontendUrl());
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedOriginPatterns(appProperties.getFrontendUrl()); // ✅ FIXED
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);

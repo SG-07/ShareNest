@@ -24,22 +24,25 @@ public class ItemController {
     private static final Logger logger = LoggerFactory.getLogger(ItemController.class);
     private final ItemService itemService;
 
-    // Create - accepts ItemDto JSON
+    // ✅ Create - accepts ItemDto JSON
     @PostMapping(
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<Item> addItem(@Valid @RequestBody ItemDto dto, Authentication auth) {
-        logger.debug("[ItemController] Received item DTO: {}", dto);
+        if (auth == null) {
+            throw new BadRequestException("Authentication is required to add an item.");
+        }
+
+        String username = auth.getName();
+        logger.debug("[ItemController] Add item request by '{}': {}", username, dto);
 
         Item item = mapDtoToItem(dto);
-        String username = auth.getName();
-
         Item saved = itemService.addItem(item, username);
         return ResponseEntity.ok(saved);
     }
 
-    // Read all available items
+    // ✅ Read all available items
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<Item>> getAllAvailableItems() {
         logger.debug("[ItemController] Fetching all available items");
@@ -53,7 +56,7 @@ public class ItemController {
         return ResponseEntity.ok(itemService.getItemById(id));
     }
 
-    // Update (owner only)
+    // ✅ Update (owner only)
     @PutMapping(
             value = "/{id}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -63,19 +66,26 @@ public class ItemController {
             @PathVariable String id,
             @Valid @RequestBody ItemDto dto,
             Authentication auth) {
+
+        if (auth == null) {
+            throw new BadRequestException("Authentication is required to update an item.");
+        }
+
         String username = auth.getName();
-        logger.debug("[ItemController] Update item {} request by user: {} payload: {}", id, username, dto);
+        logger.debug("[ItemController] Update item {} by user: {} payload: {}", id, username, dto);
 
         Item updatedItem = mapDtoToItem(dto);
         Item saved = itemService.updateItem(id, updatedItem, username);
         return ResponseEntity.ok(saved);
     }
 
-    // Delete (owner only)
+    // ✅ Delete (owner only)
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteItem(
-            @PathVariable String id,
-            Authentication auth) {
+    public ResponseEntity<String> deleteItem(@PathVariable String id, Authentication auth) {
+        if (auth == null) {
+            throw new BadRequestException("Authentication is required to delete an item.");
+        }
+
         String username = auth.getName();
         logger.debug("[ItemController] Delete item {} request by user: {}", id, username);
 
@@ -83,23 +93,31 @@ public class ItemController {
         return ResponseEntity.ok("Item deleted successfully");
     }
 
-    // Get logged-in user's items
+    // ✅ Get logged-in user's items
     @GetMapping(value = "/my", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<Item>> getMyItems(Authentication auth) {
+        if (auth == null) {
+            throw new BadRequestException("Authentication is required to fetch user's items.");
+        }
+
         String username = auth.getName();
         logger.debug("[ItemController] Fetch my items for user: {}", username);
         return ResponseEntity.ok(itemService.getMyItems(username));
     }
 
-    // Get logged-in user's available items
+    // ✅ Get logged-in user's available items
     @GetMapping(value = "/my/available", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<Item>> getMyAvailableItems(Authentication auth) {
+        if (auth == null) {
+            throw new BadRequestException("Authentication is required to fetch user's available items.");
+        }
+
         String username = auth.getName();
         logger.debug("[ItemController] Fetch my available items for user: {}", username);
         return ResponseEntity.ok(itemService.getMyAvailableItems(username));
     }
 
-    // ------ helper: map DTO -> Entity
+    // ✅ Helper: map DTO -> Entity
     private Item mapDtoToItem(ItemDto dto) {
         Item item = new Item();
 
@@ -107,20 +125,19 @@ public class ItemController {
         item.setDescription(dto.getDescription());
         item.setCategory(dto.getCategory());
 
-        try {
-            if (dto.getCondition() != null) {
+        if (dto.getCondition() != null) {
+            try {
                 item.setCondition(ItemCondition.valueOf(dto.getCondition().trim().toUpperCase()));
+            } catch (IllegalArgumentException ex) {
+                throw new BadRequestException("Invalid condition value: " + dto.getCondition());
             }
-        } catch (IllegalArgumentException ex) {
-            throw new BadRequestException("Invalid condition value: " + dto.getCondition());
         }
 
         item.setLatitude(dto.getLatitude() != null ? dto.getLatitude() : 0.0);
         item.setLongitude(dto.getLongitude() != null ? dto.getLongitude() : 0.0);
         item.setAvailable(dto.getAvailable() != null ? dto.getAvailable() : true);
-
-        item.setImageUrl(dto.getFile());
-
+        item.setImageUrls(dto.getFiles());
+        item.setTags(dto.getTags());
         item.setCity(dto.getCity());
         item.setState(dto.getState());
         item.setCountry(dto.getCountry());
