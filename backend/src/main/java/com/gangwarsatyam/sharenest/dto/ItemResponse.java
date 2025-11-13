@@ -1,10 +1,15 @@
 package com.gangwarsatyam.sharenest.dto;
 
 import com.gangwarsatyam.sharenest.model.Item;
-import lombok.*;
-import java.util.List;
-import java.util.Date;
+import com.gangwarsatyam.sharenest.model.ItemCondition;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.time.Instant;
+import java.util.List;
 
 @Getter
 @Setter
@@ -12,11 +17,12 @@ import java.util.Date;
 @NoArgsConstructor
 @Builder
 public class ItemResponse {
+
     private String id;
     private String name;
     private String description;
     private String category;
-    private String condition;
+    private ItemCondition condition;
     private List<String> imageUrls;
     private boolean available;
     private double latitude;
@@ -25,10 +31,8 @@ public class ItemResponse {
     private List<String> tags;
     private int views;
     private int likes;
-    private String borrowedBy;
-    private Date borrowedTill;
-    private Date createdAt;
-    private Date updatedAt;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     public static ItemResponse fromEntity(Item item) {
         return ItemResponse.builder()
@@ -36,7 +40,7 @@ public class ItemResponse {
                 .name(item.getName())
                 .description(item.getDescription())
                 .category(item.getCategory())
-                .condition(item.getCondition() != null ? item.getCondition().name() : null)
+                .condition(item.getCondition())
                 .imageUrls(item.getImageUrls())
                 .available(item.isAvailable())
                 .latitude(item.getLatitude())
@@ -45,8 +49,6 @@ public class ItemResponse {
                 .tags(item.getTags())
                 .views(item.getViews())
                 .likes(item.getLikes())
-                .borrowedBy(item.getBorrowedBy())
-                .borrowedTill(item.getBorrowedTill())
                 .createdAt(item.getCreatedAt())
                 .updatedAt(item.getUpdatedAt())
                 .build();
