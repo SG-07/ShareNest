@@ -25,7 +25,6 @@ public class Item {
     private String ownerId;
     private String category;
 
-    // ✅ Use enum instead of String
     private ItemCondition condition;
 
     private boolean available = true;
