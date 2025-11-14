@@ -1,6 +1,7 @@
 package com.gangwarsatyam.sharenest.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import com.gangwarsatyam.sharenest.model.ItemCondition;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import java.util.List;
@@ -22,10 +23,11 @@ public class ItemDto {
     @NotBlank
     private String category;
 
-    @NotBlank
-    private String condition;
+    @NotNull
+    private ItemCondition condition;
 
     private Boolean available;
+
     private String city;
     private String state;
     private String country;
@@ -38,9 +40,8 @@ public class ItemDto {
     @NotNull
     private Double longitude;
 
-    // ✅ frontend can send list of image URLs
-    private List<String> files;
+    // 🔥 CORRECT FIELD
+    private List<String> imageUrls;
 
-    // ✅ optional tags
     private List<String> tags;
 }

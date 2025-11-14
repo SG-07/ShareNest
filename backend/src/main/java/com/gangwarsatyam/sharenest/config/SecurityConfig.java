@@ -49,6 +49,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/check-username", "/api/auth/check-email").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/items/**", "/api/trust-score/**", "/api/map-items").permitAll()
+                        // Allow logged-in users to add items
+                        .requestMatchers(HttpMethod.POST, "/api/items").hasAnyRole("ROLE_USER", "ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
 
@@ -86,7 +88,7 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedOriginPatterns(appProperties.getFrontendUrl()); // ✅ FIXED
+        config.setAllowedOriginPatterns(appProperties.getFrontendUrl());
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         source.registerCorsConfiguration("/**", config);

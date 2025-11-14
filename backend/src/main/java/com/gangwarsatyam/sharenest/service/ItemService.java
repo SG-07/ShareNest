@@ -3,10 +3,14 @@ package com.gangwarsatyam.sharenest.service;
 import com.gangwarsatyam.sharenest.model.Item;
 import com.gangwarsatyam.sharenest.repository.ItemRepository;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
+import com.gangwarsatyam.sharenest.model.ItemCondition;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import java.util.ArrayList;
+import java.util.List;
+import com.gangwarsatyam.sharenest.model.User;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,48 +23,42 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
 
-    // ✅ Fetch all items (for map display)
-    public List<Item> getAllItems() {
-        logger.debug("[ItemService] Fetching ALL items (map view)");
-        return itemRepository.findAll();
-    }
-
-    // ✅ Fetch single item by ID
     public Item getItemById(String id) {
         logger.debug("[ItemService] Fetching item by id: {}", id);
         return itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item not found with id: " + id));
     }
 
-    // ✅ Add new item
     public Item addItem(Item item, String username) {
+
         String ownerId = userRepository.findByUsername(username)
-                .map(u -> u.getId())
+                .map(User::getId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         item.setOwnerId(ownerId);
 
-        // Initialize optional fields
+        // 🔥 Ensure lists are never null
         if (item.getImageUrls() == null) item.setImageUrls(new ArrayList<>());
         if (item.getTags() == null) item.setTags(new ArrayList<>());
 
         item.setViews(0);
         item.setLikes(0);
-        item.setAvailable(true);
 
         Item saved = itemRepository.save(item);
-        logger.debug("[ItemService] Added new item '{}' for user '{}' (ownerId={})",
+
+        logger.debug("[ItemService] Added item '{}' by user '{}' (ownerId={})",
                 item.getName(), username, ownerId);
+
         return saved;
     }
 
-    // ✅ Update item (only owner can update)
     public Item updateItem(String itemId, Item updatedItem, String username) {
+
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
 
         String ownerId = userRepository.findByUsername(username)
-                .map(u -> u.getId())
+                .map(User::getId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         if (!item.getOwnerId().equals(ownerId)) {
@@ -69,41 +67,42 @@ public class ItemService {
 
         item.setName(updatedItem.getName());
         item.setDescription(updatedItem.getDescription());
-        item.setQuantity(updatedItem.getQuantity());
         item.setCategory(updatedItem.getCategory());
         item.setCondition(updatedItem.getCondition());
+
         item.setAvailable(updatedItem.isAvailable());
-        item.setImageUrls(updatedItem.getImageUrls() != null ? updatedItem.getImageUrls() : new ArrayList<>());
-        item.setTags(updatedItem.getTags() != null ? updatedItem.getTags() : new ArrayList<>());
         item.setLatitude(updatedItem.getLatitude());
         item.setLongitude(updatedItem.getLongitude());
+
+        // 🔥 Preserve null-safe lists
+        item.setImageUrls(updatedItem.getImageUrls() != null ? updatedItem.getImageUrls() : new ArrayList<>());
+        item.setTags(updatedItem.getTags() != null ? updatedItem.getTags() : new ArrayList<>());
+
         item.setCity(updatedItem.getCity());
         item.setState(updatedItem.getState());
         item.setCountry(updatedItem.getCountry());
         item.setStreet(updatedItem.getStreet());
         item.setPincode(updatedItem.getPincode());
 
-        // Auditing automatically updates updatedAt
-
         Item saved = itemRepository.save(item);
-        logger.debug("[ItemService] Updated item '{}' for user '{}' (ownerId={})",
-                item.getName(), username, ownerId);
+
+        logger.debug("[ItemService] Updated item '{}' by user '{}' (ownerId={})",
+                saved.getName(), username, ownerId);
+
         return saved;
     }
 
-    // ✅ Fetch all available items
     public List<Item> getAllAvailableItems() {
-        logger.debug("[ItemService] Fetching all available items");
         return itemRepository.findByAvailableTrue();
     }
 
-    // ✅ Delete item (only owner can delete)
     public void deleteItem(String itemId, String username) {
+
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
 
         String ownerId = userRepository.findByUsername(username)
-                .map(u -> u.getId())
+                .map(User::getId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
         if (!item.getOwnerId().equals(ownerId)) {
@@ -111,27 +110,21 @@ public class ItemService {
         }
 
         itemRepository.delete(item);
-        logger.debug("[ItemService] Deleted item '{}' for user '{}' (ownerId={})",
-                item.getName(), username, ownerId);
     }
 
-    // ✅ Get logged-in user's all items
     public List<Item> getMyItems(String username) {
         String ownerId = userRepository.findByUsername(username)
-                .map(u -> u.getId())
+                .map(User::getId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        logger.debug("[ItemService] Fetching ALL items for user '{}' (ownerId={})", username, ownerId);
         return itemRepository.findByOwnerId(ownerId);
     }
 
-    // ✅ Get logged-in user's available items
     public List<Item> getMyAvailableItems(String username) {
         String ownerId = userRepository.findByUsername(username)
-                .map(u -> u.getId())
+                .map(User::getId)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        logger.debug("[ItemService] Fetching AVAILABLE items for user '{}' (ownerId={})", username, ownerId);
         return itemRepository.findByOwnerIdAndAvailableTrue(ownerId);
     }
 }

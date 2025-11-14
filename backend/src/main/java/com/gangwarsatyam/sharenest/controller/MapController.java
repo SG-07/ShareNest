@@ -17,10 +17,10 @@ public class MapController {
 
     @GetMapping
     public ResponseEntity<List<ItemResponse>> getMapItems() {
-        List<ItemResponse> responses = itemService.getAllItems()
+        List<ItemResponse> responses = itemService.getAllAvailableItems()
                 .stream()
-                .filter(i -> i.getLatitude() != 0 && i.getLongitude() != 0) // only items with coords
-                .map(ItemResponse::fromEntity) // ✅ convert Item → ItemResponse
+                .filter(i -> i.getLatitude() != 0 && i.getLongitude() != 0)
+                .map(ItemResponse::fromEntity)
                 .toList();
 
         return ResponseEntity.ok(responses);
