@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/auth/check-username", "/api/auth/check-email").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/items/**", "/api/trust-score/**", "/api/map-items").permitAll()
                         // Allow logged-in users to add items
-                        .requestMatchers(HttpMethod.POST, "/api/items").hasAnyRole("ROLE_USER", "ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/items").authenticated()
                         .anyRequest().authenticated()
                 )
 
