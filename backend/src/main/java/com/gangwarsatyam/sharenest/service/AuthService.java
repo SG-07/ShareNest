@@ -44,16 +44,16 @@ public class AuthService {
         userRepository.save(user);
 
         String token = jwtProvider.generateToken(user.getUsername());
-        log.debug("[AuthService] Token generated: {}", token);
+        log.debug("[AuthService] Token generated for {}: {}", user.getUsername(), token);
 
         return new AuthResponse(token, mapToDto(user));
     }
 
-    public AuthResponse login(String username, String password) {
-        log.debug("[AuthService] Login attempt for username/email: {}", username);
+    public AuthResponse login(String usernameOrEmail, String password) {
+        log.debug("[AuthService] Login attempt for username/email: {}", usernameOrEmail);
 
-        User user = userRepository.findByUsername(username)
-                .or(() -> userRepository.findByEmail(username))
+        User user = userRepository.findByUsername(usernameOrEmail)
+                .or(() -> userRepository.findByEmail(usernameOrEmail))
                 .orElseThrow(() -> new RuntimeException("Invalid username or email"));
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
@@ -61,7 +61,7 @@ public class AuthService {
         }
 
         String token = jwtProvider.generateToken(user.getUsername());
-        log.debug("[AuthService] Token generated: {}", token);
+        log.debug("[AuthService] Token generated for {}: {}", user.getUsername(), token);
 
         return new AuthResponse(token, mapToDto(user));
     }

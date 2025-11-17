@@ -3,6 +3,8 @@ package com.gangwarsatyam.sharenest.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import com.gangwarsatyam.sharenest.model.ItemCondition;
+
 import java.util.List;
 
 @Getter
@@ -11,6 +13,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ItemDto {
+
     @NotBlank
     private String name;
 
@@ -20,25 +23,28 @@ public class ItemDto {
     @NotBlank
     private String category;
 
-    @NotBlank
-    private String condition;
+    // Correct: Enum, not string
+    @NotNull
+    private ItemCondition condition;
 
-    // optional - if omitted we'll default to true when creating
     private Boolean available;
 
-    // address pieces
     private String city;
     private String state;
     private String country;
     private String street;
     private String pincode;
 
-    // coordinates (nullable; will map to 0.0 if null)
     @NotNull
     private Double latitude;
 
     @NotNull
     private Double longitude;
 
+    // Correct: frontend will send list of URLs
     private List<String> imageUrls;
+
+    // Optional tags
+    private List<String> tags;
 }
+
