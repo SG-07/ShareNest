@@ -1,5 +1,5 @@
 // src/pages/ItemDetails.jsx
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getItem, createRequest } from "../services/api";
 import Loading from "../components/common/Loading";
@@ -9,6 +9,7 @@ import { devLog } from "../utils/devLog";
 export default function ItemDetails() {
   const { id } = useParams();
   const [item, setItem] = useState(null);
+  const [mainImage, setMainImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [requesting, setRequesting] = useState(false);
@@ -16,17 +17,25 @@ export default function ItemDetails() {
 
   useEffect(() => {
     let mounted = true;
+
     async function fetchItem() {
       try {
         setLoading(true);
         devLog("ItemDetails", `Fetching item ${id}`);
         const res = await getItem(id);
         if (!mounted) return;
-        setItem(res.data);
-        devLog("ItemDetails", "Item fetched", res.data);
+
+        const data = res.data;
+        setItem(data);
+
+        // Set first image as main image
+        if (data.imageUrls?.length > 0) {
+          setMainImage(data.imageUrls[0]);
+        } else {
+          setMainImage("/placeholder-item.png");
+        }
       } catch (err) {
         devLog("ItemDetails", "Failed to fetch item", err);
-        console.error(err);
         setError(
           err?.response?.data?.message || err.message || "Unable to load item"
         );
@@ -34,6 +43,7 @@ export default function ItemDetails() {
         if (mounted) setLoading(false);
       }
     }
+
     fetchItem();
     return () => {
       mounted = false;
@@ -43,20 +53,13 @@ export default function ItemDetails() {
   const handleRequest = async () => {
     try {
       setRequesting(true);
-      const payload = { message: "Hi — can I borrow this for 3 days?" };
-      devLog("ItemDetails", "Sending request", payload);
-      const res = await createRequest(id, payload);
-      setSuccessMsg(
-        res?.data?.message || "Request created — owner will be notified"
-      );
-      devLog("ItemDetails", "Request response", res.data);
+      const res = await createRequest(id, { message: "Hi — can I borrow this?" });
+      setSuccessMsg(res?.data?.message || "Request created — owner will be notified");
     } catch (err) {
-      devLog("ItemDetails", "Request failed", err);
-      console.error("Request failed", err);
       setError(
         err?.response?.data?.message ||
-          err.message ||
-          "Unable to create request"
+        err.message ||
+        "Unable to create request"
       );
     } finally {
       setRequesting(false);
@@ -68,19 +71,40 @@ export default function ItemDetails() {
   if (!item) return <div className="max-w-7xl mx-auto p-6">Item not found</div>;
 
   return (
-    <div className="max-w-4xl mx-auto px-4">
+    <div className="max-w-4xl mx-auto px-4 py-6">
       <div className="bg-white rounded shadow p-6">
         <div className="md:flex gap-6">
-          <img
-            src={item.image || "/placeholder-item.png"}
-            alt={item.name || "Item"}
-            className="w-full md:w-1/2 h-80 object-cover rounded"
-          />
+          
+          {/* Main Image */}
+          <div className="w-full md:w-1/2">
+            <img
+              src={mainImage}
+              alt={item.name}
+              className="w-full h-80 object-cover rounded"
+            />
+
+            {/* Thumbnails */}
+            {item.imageUrls?.length > 1 && (
+              <div className="flex gap-2 mt-3">
+                {item.imageUrls.map((url, idx) => (
+                  <img
+                    key={idx}
+                    src={url}
+                    alt={`Thumbnail ${idx}`}
+                    className={`h-20 w-20 object-cover rounded cursor-pointer border ${
+                      mainImage === url ? "border-indigo-600" : "border-gray-300"
+                    }`}
+                    onClick={() => setMainImage(url)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Info */}
           <div className="mt-4 md:mt-0 md:flex-1">
             <h2 className="text-2xl font-semibold">{item.name}</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              {item.category || "Uncategorized"}
-            </p>
+            <p className="text-sm text-gray-500 mt-1">{item.category}</p>
             <p className="mt-4 text-gray-700">{item.description}</p>
 
             <div className="mt-6 flex items-center gap-4">
@@ -107,6 +131,7 @@ export default function ItemDetails() {
               <div className="mt-4 text-green-700">{successMsg}</div>
             )}
           </div>
+
         </div>
       </div>
     </div>
