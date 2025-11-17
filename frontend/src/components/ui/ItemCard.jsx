@@ -1,10 +1,14 @@
-// src/components/ui/ItemCard.jsx
 import { Link } from "react-router-dom";
 
 export default function ItemCard({ item }) {
   if (!item) return null;
 
-  const img = item.image || "/placeholder-item.png";
+  // Read first image from imageUrls[]
+  const img =
+    item.imageUrls?.[0] ||
+    item.image || // fallback for old items
+    "/placeholder-item.png";
+
   const id = item.id || item._id;
 
   return (

@@ -5,7 +5,7 @@ import Loading from "../components/common/Loading";
 import ErrorBanner from "../components/common/Error";
 import ItemCard from "../components/ui/ItemCard";
 import { useSearch } from "../context/SearchContext";
-import { devLog } from "../utils/devLog"; 
+import { devLog } from "../utils/devLog";
 
 function ItemFilterBar({ onFilter }) {
   const [category, setCategory] = useState("");
@@ -57,13 +57,15 @@ export default function Home() {
 
   useEffect(() => {
     let mounted = true;
+
     async function fetchItems() {
       try {
         setLoading(true);
         devLog("Fetching items from API...");
         const res = await getItems();
-        devLog("Items fetched:", res.data);
         if (!mounted) return;
+
+        devLog("Items fetched:", res.data);
         setItems(res.data || []);
       } catch (err) {
         devLog("Error fetching items:", err);
@@ -72,6 +74,7 @@ export default function Home() {
         if (mounted) setLoading(false);
       }
     }
+
     fetchItems();
     return () => { mounted = false; };
   }, []);
@@ -95,6 +98,7 @@ export default function Home() {
     <div className="max-w-7xl mx-auto px-4">
       <h1 className="text-2xl font-bold mb-6">Catalog</h1>
       <ItemFilterBar onFilter={setFilters} />
+
       {filteredItems.length === 0 ? (
         <div className="text-center py-12 text-gray-600">
           No items found — try different filters!
@@ -102,7 +106,13 @@ export default function Home() {
       ) : (
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {filteredItems.map((it) => (
-            <ItemCard key={it.id || it._id} item={it} />
+            <ItemCard
+              key={it.id || it._id}
+              item={{
+                ...it,
+                image: it.imageUrls?.[0] || "/placeholder-item.png", // ✔ first image
+              }}
+            />
           ))}
         </div>
       )}
