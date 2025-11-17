@@ -119,7 +119,7 @@ public class ItemController {
         item.setLongitude(dto.getLongitude() != null ? dto.getLongitude() : 0.0);
         item.setAvailable(dto.getAvailable() != null ? dto.getAvailable() : true);
 
-        item.setImageUrl(dto.getFile());
+        item.setImageUrls(dto.getImageUrls());
 
         item.setCity(dto.getCity());
         item.setState(dto.getState());

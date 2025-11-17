@@ -44,7 +44,10 @@ export default function AddItem() {
     latitude: "",
     longitude: "",
   });
-  const [imageFile, setImageFile] = useState(null);
+
+  // CHANGED: support multiple images
+  const [imageFiles, setImageFiles] = useState([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -54,7 +57,21 @@ export default function AddItem() {
     setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
   };
 
-  const onFile = (e) => setImageFile(e.target.files?.[0] || null);
+  // UPDATED: accept up to 3 images
+  const onFile = (e) => {
+    const files = Array.from(e.target.files);
+
+    if (files.length > 3) {
+      toast.error("You can upload a maximum of 3 images.", { autoClose: 3000 });
+      return;
+    }
+    if (files.length < 1) {
+      toast.error("Please select at least 1 image.", { autoClose: 3000 });
+      return;
+    }
+
+    setImageFiles(files);
+  };
 
   // Geocode using only pincode + state + country
   const handleGeocode = async () => {
@@ -101,12 +118,13 @@ export default function AddItem() {
       });
       return;
     }
-    if (!imageFile) {
-      toast.error("Please upload an image for the item.", { autoClose: 3000 });
+
+    // UPDATED: multiple images validation
+    if (imageFiles.length < 1) {
+      toast.error("Please upload at least 1 image.", { autoClose: 3000 });
       return;
     }
 
-    // Check authentication
     const user = JSON.parse(localStorage.getItem("user"));
     const token = localStorage.getItem("jwtToken");
     if (!user || !token) {
@@ -117,7 +135,6 @@ export default function AddItem() {
     if (!form.latitude || !form.longitude) {
       await handleGeocode();
       if (!form.latitude || !form.longitude) {
-        // geocode failed
         return;
       }
     }
@@ -125,10 +142,15 @@ export default function AddItem() {
     try {
       setLoading(true);
 
-      // Upload image (required)
-      devLog("API", "Uploading image to Cloudinary…");
-      const imageUrl = await uploadImage(imageFile);
-      devLog("AddItem", "Image uploaded, url:", imageUrl);
+      // --- MULTIPLE IMAGE UPLOAD ---
+      devLog("API", "Uploading images to Cloudinary…");
+
+      const uploadedImageUrls = [];
+      for (let file of imageFiles) {
+        const url = await uploadImage(file);
+        devLog("AddItem", "Image uploaded:", url);
+        uploadedImageUrls.push(url);
+      }
 
       // Prepare payload with ownerId
       const itemPayload = {
@@ -139,13 +161,16 @@ export default function AddItem() {
         available: form.available,
         latitude: parseFloat(form.latitude),
         longitude: parseFloat(form.longitude),
-        imageUrl,
+
+        // UPDATED: send array instead of single url
+        imageUrls: uploadedImageUrls,
+
         street: form.street,
         city: form.city,
         state: form.state,
         country: form.country,
         pincode: form.pincode,
-        ownerId: user?.id || user?._id, // ✅ added ownerId from logged-in user
+        ownerId: user?.id || user?._id,
       };
 
       devLog("AddItem", "Sending item data to API", itemPayload);
@@ -169,7 +194,7 @@ export default function AddItem() {
     }
   };
 
-  // Marker logic
+  // Marker logic (unchanged)
   const LocationMarker = () => {
     const map = useMap();
 
@@ -389,14 +414,21 @@ export default function AddItem() {
 
         {/* Image */}
         <div>
-          <label className="block font-medium mb-1">Upload Image</label>
+          <label className="block font-medium mb-1">Upload Images (max 3)</label>
           <input
             type="file"
             accept="image/*"
+            multiple
             onChange={onFile}
             className="w-full"
             required
           />
+
+          {imageFiles.length > 0 && (
+            <p className="text-sm text-gray-500 mt-1">
+              {imageFiles.length} file(s) selected
+            </p>
+          )}
         </div>
 
         {/* Submit */}

@@ -2,6 +2,7 @@ package com.gangwarsatyam.sharenest.dto;
 
 import com.gangwarsatyam.sharenest.model.Item;
 import lombok.*;
+import java.util.List;
 
 @Getter
 @Setter
@@ -14,7 +15,7 @@ public class ItemResponse {
     private String description;
     private String category;
     private String condition;
-    private String imageUrl;
+    private List<String> imageUrls;
     private boolean available;
     private double latitude;
     private double longitude;
@@ -28,7 +29,7 @@ public class ItemResponse {
                 .description(item.getDescription())
                 .category(item.getCategory())
                 .condition(item.getCondition() != null ? item.getCondition().name() : null)
-                .imageUrl(item.getImageUrl())
+                .imageUrls(item.getImageUrls())
                 .available(item.isAvailable())
                 .latitude(item.getLatitude())
                 .longitude(item.getLongitude())

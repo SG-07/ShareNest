@@ -5,7 +5,7 @@ import Loading from "../components/common/Loading";
 import ErrorBanner from "../components/common/Error";
 import ItemCard from "../components/ui/ItemCard";
 import { useSearch } from "../context/SearchContext";
-import { devLog } from "../utils/devLog"; // 🔹 dev log helper
+import { devLog } from "../utils/devLog"; 
 
 function ItemFilterBar({ onFilter }) {
   const [category, setCategory] = useState("");

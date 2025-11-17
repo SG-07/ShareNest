@@ -73,7 +73,7 @@ public class ItemService {
         item.setLatitude(updatedItem.getLatitude());
         item.setLongitude(updatedItem.getLongitude());
         item.setAvailable(updatedItem.isAvailable());
-        item.setImageUrl(updatedItem.getImageUrl());
+        item.setImageUrls(updatedItem.getImageUrls());
 
         item.setCity(updatedItem.getCity());
         item.setState(updatedItem.getState());

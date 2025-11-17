@@ -3,6 +3,7 @@ package com.gangwarsatyam.sharenest.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import java.util.List;
 
 @Getter
 @Setter
@@ -19,10 +20,6 @@ public class ItemDto {
     @NotBlank
     private String category;
 
-    /**
-     * condition sent as string from frontend (e.g. "good", "NEW", "Good").
-     * We'll convert to ItemCondition in controller.
-     */
     @NotBlank
     private String condition;
 
@@ -43,9 +40,5 @@ public class ItemDto {
     @NotNull
     private Double longitude;
 
-    /**
-     * frontend will send image url (string) in "file" field (or full url).
-     * We'll map this to Item.imageUrl.
-     */
-    private String file;
+    private List<String> imageUrls;
 }

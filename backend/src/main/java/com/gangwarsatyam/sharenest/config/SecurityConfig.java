@@ -49,7 +49,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/auth/me", "/api/auth/refresh").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/items/**", "/api/trust-score/**", "/api/map-items").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/items/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/items/**").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/items/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/items/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()

@@ -3,6 +3,7 @@ package com.gangwarsatyam.sharenest.model;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import java.util.List;
 
 @Document(collection = "items")
 @Getter
@@ -28,7 +29,7 @@ public class Item {
     private double longitude;
 
     private boolean available = true;
-    private String imageUrl;
+    private List<String> imageUrls;
 
     // Address fields
     private String city;
