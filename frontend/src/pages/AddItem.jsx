@@ -1,41 +1,32 @@
-// src/pages/AddItem.jsx
-import { useState, useEffect } from "react";
+// src/pages/AddItem/AddItem.jsx
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Circle,
-  useMapEvents,
-  useMap,
-} from "react-leaflet";
-import L from "leaflet";
-import { createItem, geocodeAddress, uploadImage } from "../services/api";
+import { createItem, uploadImage } from "../services/api";
 import Loading from "../components/common/Loading";
 import ErrorBanner from "../components/common/Error";
 import { devLog } from "../utils/devLog";
 import { toast } from "react-toastify";
 
-import "leaflet/dist/leaflet.css";
-import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
-
-// Fix Leaflet icons not showing in React
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon2x,
-  shadowUrl: markerShadow,
-});
+/* Components */
+import BasicDetails from "../components/AddItem/BasicDetails";
+import PricingDetails from "../components/AddItem/PricingDetails";
+import RentalRules from "../components/AddItem/RentalRules";
+import CalendarSection from "../components/AddItem/CalendarSection";
+import DeliveryOptions from "../components/AddItem/DeliveryOptions";
+import ImageUploader from "../components/AddItem/ImageUploader";
+import LocationPicker from "../components/AddItem/LocationPicker";
 
 export default function AddItem() {
+  const navigate = useNavigate();
+
   const [form, setForm] = useState({
     name: "",
     description: "",
     category: "",
     condition: "GOOD",
     available: true,
+    pricePerDay: "",
+    tags: "",
     street: "",
     city: "",
     state: "",
@@ -43,108 +34,82 @@ export default function AddItem() {
     pincode: "",
     latitude: "",
     longitude: "",
+
+    // NEW fields
+    availableFrom: "",
+    availableUntil: "",
+    safetyNotes: "",
+    deliveryOption: "PICKUP", // PICKUP | DELIVERY | BOTH
+    deliveryCharge: "",
+    minRentalDays: "",
+    maxRentalDays: "",
+    securityDeposit: "",
   });
 
-  // CHANGED: support multiple images
-  const [imageFiles, setImageFiles] = useState([]);
-
+  // images managed here (parent performs upload)
+  const [imageFiles, setImageFiles] = useState([]); // File[]
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
 
-  const onChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((f) => ({ ...f, [name]: type === "checkbox" ? checked : value }));
+  // generic field updater used by children
+  const setField = (name, value) => {
+    setForm((f) => ({ ...f, [name]: value }));
   };
 
-  // UPDATED: accept up to 3 images
-  const onFile = (e) => {
-    const files = Array.from(e.target.files);
-
-    if (files.length > 3) {
-      toast.error("You can upload a maximum of 3 images.", { autoClose: 3000 });
-      return;
+  const validate = () => {
+    if (!form.name) {
+      toast.error("Item name is required.");
+      return false;
     }
-    if (files.length < 1) {
-      toast.error("Please select at least 1 image.", { autoClose: 3000 });
-      return;
-    }
-
-    setImageFiles(files);
-  };
-
-  // Geocode using only pincode + state + country
-  const handleGeocode = async () => {
-    setError(null);
     if (!form.pincode || !form.state || !form.country) {
-      setError("Please provide pincode, state and country to locate on map.");
-      toast.error("Pincode, state and country required!", { autoClose: 3000 });
-      return;
+      toast.error("Pincode, state and country are required.");
+      return false;
     }
-    try {
-      const { lat, lon } = await geocodeAddress(
-        form.pincode.trim(),
-        form.state.trim(),
-        form.country.trim()
-      );
-      setForm((f) => ({
-        ...f,
-        latitude: parseFloat(lat),
-        longitude: parseFloat(lon),
-      }));
-      devLog("AddItem", "Geocode success", lat, lon);
-    } catch (err) {
-      const msg = err?.message || "Failed to fetch location.";
-      setError(msg);
-      devLog("AddItem", "Geocode failed", err);
-      toast.error(msg, { autoClose: 3000 });
+    if (!form.pricePerDay || Number(form.pricePerDay) <= 0) {
+      toast.error("Price per day must be greater than 0.");
+      return false;
     }
+    if (form.minRentalDays && form.maxRentalDays) {
+      if (Number(form.minRentalDays) > Number(form.maxRentalDays)) {
+        toast.error(
+          "Min rental duration cannot be greater than max rental duration."
+        );
+        return false;
+      }
+    }
+    if (form.deliveryOption === "DELIVERY" || form.deliveryOption === "BOTH") {
+      if (form.deliveryCharge === "" || Number(form.deliveryCharge) < 0) {
+        toast.error("Please provide a valid delivery charge.");
+        return false;
+      }
+    }
+    if (imageFiles.length < 1) {
+      toast.error("Please upload at least 1 image.");
+      return false;
+    }
+    if (imageFiles.length > 3) {
+      toast.error("Maximum 3 images allowed.");
+      return false;
+    }
+    return true;
   };
 
-  // Submit item
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    // Validate required fields
-    if (!form.name) {
-      toast.error("Item name is required.", { autoClose: 3000 });
-      return;
-    }
-    if (!form.pincode || !form.state || !form.country) {
-      setError("Please provide pincode, state and country.");
-      toast.error("Please provide pincode, state and country.", {
-        autoClose: 3000,
-      });
-      return;
-    }
-
-    // UPDATED: multiple images validation
-    if (imageFiles.length < 1) {
-      toast.error("Please upload at least 1 image.", { autoClose: 3000 });
-      return;
-    }
+    if (!validate()) return;
 
     const user = JSON.parse(localStorage.getItem("user"));
     const token = localStorage.getItem("jwtToken");
     if (!user || !token) {
-      toast.error("You must be logged in to add an item.", { autoClose: 3000 });
+      toast.error("You must be logged in to add an item.");
       return;
     }
 
-    if (!form.latitude || !form.longitude) {
-      await handleGeocode();
-      if (!form.latitude || !form.longitude) {
-        return;
-      }
-    }
-
+    setLoading(true);
     try {
-      setLoading(true);
-
-      // --- MULTIPLE IMAGE UPLOAD ---
       devLog("API", "Uploading images to Cloudinary…");
-
       const uploadedImageUrls = [];
       for (let file of imageFiles) {
         const url = await uploadImage(file);
@@ -152,24 +117,43 @@ export default function AddItem() {
         uploadedImageUrls.push(url);
       }
 
-      // Prepare payload with ownerId
       const itemPayload = {
         name: form.name,
         description: form.description,
         category: form.category,
         condition: form.condition,
         available: form.available,
-        latitude: parseFloat(form.latitude),
-        longitude: parseFloat(form.longitude),
-
-        // UPDATED: send array instead of single url
+        latitude: form.latitude ? parseFloat(form.latitude) : null,
+        longitude: form.longitude ? parseFloat(form.longitude) : null,
         imageUrls: uploadedImageUrls,
-
+        pricePerDay: Number(form.pricePerDay),
+        tags: form.tags
+          ? form.tags
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : [],
         street: form.street,
         city: form.city,
         state: form.state,
         country: form.country,
         pincode: form.pincode,
+
+        // new fields
+        availableFrom: form.availableFrom || null,
+        availableUntil: form.availableUntil || null,
+        safetyNotes: form.safetyNotes || "",
+        deliveryOption: form.deliveryOption,
+        deliveryCharge:
+          form.deliveryOption === "PICKUP"
+            ? 0
+            : Number(form.deliveryCharge || 0),
+        minRentalDays: form.minRentalDays ? Number(form.minRentalDays) : null,
+        maxRentalDays: form.maxRentalDays ? Number(form.maxRentalDays) : null,
+        securityDeposit: form.securityDeposit
+          ? Number(form.securityDeposit)
+          : 0,
+
         ownerId: user?.id || user?._id,
       };
 
@@ -177,75 +161,18 @@ export default function AddItem() {
       const res = await createItem(itemPayload);
       devLog("AddItem", "Item created successfully", res.data);
 
-      toast.success("Item added successfully!", { autoClose: 3000 });
-
+      toast.success("Item added successfully!");
       const id = res?.data?.id || res?.data?._id;
-      setTimeout(() => {
-        navigate(id ? `/items/${id}` : "/");
-      }, 700);
+      navigate(id ? `/items/${id}` : "/");
     } catch (err) {
       devLog("AddItem", "Failed to create item", err);
       const msg =
         err?.response?.data?.message || err.message || "Failed to create item";
       setError(msg);
-      toast.error(msg, { autoClose: 3000 });
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
-  };
-
-  // Marker logic (unchanged)
-  const LocationMarker = () => {
-    const map = useMap();
-
-    const position =
-      form.latitude && form.longitude
-        ? [Number(form.latitude), Number(form.longitude)]
-        : null;
-
-    useEffect(() => {
-      if (position && map) {
-        try {
-          map.flyTo(position, 14, { duration: 0.7 });
-        } catch (err) {}
-      }
-    }, [position, map]);
-
-    useMapEvents({
-      click(e) {
-        const { lat, lng } = e.latlng;
-        const confirmUpdate = window.confirm(
-          "Do you want to set this as the item’s location?"
-        );
-        if (confirmUpdate) {
-          setForm((f) => ({ ...f, latitude: lat, longitude: lng }));
-          devLog("AddItem", "Map clicked, location updated", lat, lng);
-        }
-      },
-    });
-
-    if (!position) return null;
-
-    return (
-      <>
-        <Marker
-          draggable
-          position={position}
-          eventHandlers={{
-            dragend: (e) => {
-              const { lat, lng } = e.target.getLatLng();
-              setForm((f) => ({ ...f, latitude: lat, longitude: lng }));
-              devLog("AddItem", "Marker dragged, new position", lat, lng);
-            },
-          }}
-        />
-        <Circle
-          center={position}
-          radius={100}
-          pathOptions={{ color: "blue" }}
-        />
-      </>
-    );
   };
 
   if (loading) return <Loading message="Creating item…" />;
@@ -257,187 +184,56 @@ export default function AddItem() {
       {error && <ErrorBanner message={error} />}
 
       <form onSubmit={submit} className="bg-white p-6 rounded shadow space-y-4">
-        {/* Basic Info */}
+        <BasicDetails form={form} setField={setField} />
+
+        <PricingDetails form={form} setField={setField} />
+
         <div>
-          <label className="block font-medium mb-1">Name</label>
+          <label className="block font-medium mb-1">
+            Tags (comma-separated)
+          </label>
           <input
             type="text"
-            name="name"
-            value={form.name}
-            onChange={onChange}
-            className="w-full border rounded px-3 py-2"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium mb-1">Description</label>
-          <textarea
-            name="description"
-            value={form.description}
-            onChange={onChange}
-            className="w-full border rounded px-3 py-2"
-            rows={3}
-          />
-        </div>
-
-        <div>
-          <label className="block font-medium mb-1">Category</label>
-          <input
-            type="text"
-            name="category"
-            value={form.category}
-            onChange={onChange}
+            name="tags"
+            value={form.tags}
+            onChange={(e) => setField("tags", e.target.value)}
+            placeholder="e.g., electric machine, tools, drill"
             className="w-full border rounded px-3 py-2"
           />
-        </div>
-
-        <div>
-          <label className="block font-medium mb-1">Condition</label>
-          <select
-            name="condition"
-            value={form.condition}
-            onChange={onChange}
-            className="w-full border rounded px-3 py-2"
-          >
-            <option value="NEW">New</option>
-            <option value="GOOD">Good</option>
-            <option value="FAIR">Fair</option>
-            <option value="POOR">Poor</option>
-          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Add multiple tags separated by commas.
+          </p>
         </div>
 
         <div className="flex items-center">
           <input
             type="checkbox"
             name="available"
-            checked={form.available}
-            onChange={onChange}
+            checked={!!form.available}
+            onChange={(e) => setField("available", e.target.checked)}
             className="mr-2"
           />
           <label>Available</label>
         </div>
 
-        {/* Address */}
-        <h2 className="text-lg font-semibold mt-4">Location</h2>
+        <LocationPicker form={form} setField={setField} />
+
+        <CalendarSection form={form} setField={setField} />
+
+        <RentalRules form={form} setField={setField} />
+
+        <DeliveryOptions form={form} setField={setField} />
+
+        <ImageUploader files={imageFiles} onChangeFiles={setImageFiles} />
 
         <div>
-          <label className="block font-medium mb-1">House/Colony</label>
-          <input
-            type="text"
-            name="street"
-            value={form.street}
-            onChange={onChange}
-            className="w-full border rounded px-3 py-2"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium mb-1">City</label>
-            <input
-              type="text"
-              name="city"
-              value={form.city}
-              onChange={onChange}
-              className="w-full border rounded px-3 py-2"
-            />
-          </div>
-          <div>
-            <label className="block font-medium mb-1">State</label>
-            <input
-              type="text"
-              name="state"
-              value={form.state}
-              onChange={onChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block font-medium mb-1">Country</label>
-            <input
-              type="text"
-              name="country"
-              value={form.country}
-              onChange={onChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-          <div>
-            <label className="block font-medium mb-1">Pincode</label>
-            <input
-              type="text"
-              name="pincode"
-              value={form.pincode}
-              onChange={onChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={handleGeocode}
-          className="bg-gray-200 px-3 py-1 rounded hover:bg-gray-300"
-        >
-          Locate on Map
-        </button>
-
-        {/* Map Preview */}
-        <div className="mt-4">
-          <h3 className="font-medium mb-2">Preview Location</h3>
-          <MapContainer
-            center={
-              form.latitude && form.longitude
-                ? [Number(form.latitude), Number(form.longitude)]
-                : [20.5937, 78.9629]
-            }
-            zoom={form.latitude && form.longitude ? 14 : 4}
-            className="w-full h-72 rounded border"
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap contributors"
-            />
-            <LocationMarker />
-          </MapContainer>
-          <p className="text-sm text-gray-500 mt-1">
-            Click on map to set pin or drag the marker to fine-tune.
-          </p>
+            Add Item
+          </button>
         </div>
-
-        {/* Image */}
-        <div>
-          <label className="block font-medium mb-1">Upload Images (max 3)</label>
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={onFile}
-            className="w-full"
-            required
-          />
-
-          {imageFiles.length > 0 && (
-            <p className="text-sm text-gray-500 mt-1">
-              {imageFiles.length} file(s) selected
-            </p>
-          )}
-        </div>
-
-        {/* Submit */}
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Add Item
-        </button>
       </form>
     </div>
   );
