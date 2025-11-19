@@ -1,17 +1,16 @@
+// src/App.jsx
 import { Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import AppRoutes from "./routes/AppRoutes";
 
 /**
  * Root App Component
- * ------------------
- * Uses React Router v6.
- * Wraps routes inside Layout (Navbar + Footer).
  */
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
+
         {/* Home / Catalog */}
         <Route index element={<AppRoutes.Home />} />
 
@@ -19,8 +18,8 @@ export default function App() {
         <Route path="items/:id" element={<AppRoutes.ItemDetails />} />
         <Route path="add-item" element={<AppRoutes.AddItem />} />
 
-        {/* Requests */}
-        <Route path="my-requests" element={<AppRoutes.MyRequests />} />
+        {/* Borrow Page */}
+        <Route path="borrow/:itemId" element={<AppRoutes.BorrowItem />} />
 
         {/* Map */}
         <Route path="map" element={<AppRoutes.MapView />} />
