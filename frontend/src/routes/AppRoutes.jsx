@@ -7,6 +7,7 @@ import AddItem from "../pages/AddItem";
 import NotFound from "../pages/NotFound";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
+import BorrowItem from "../pages/BorrowItem/BorrowItem";
 
 // lazy placeholders for pages you can implement next
 const MyRequests = () => (
@@ -35,6 +36,7 @@ export default {
   Login,
   Signup,
   NotFound,
+  BorrowItem,
   About,
   // helper wrapper component for protected routes
   Protected: ({ children }) => <ProtectedRoute>{children}</ProtectedRoute>,
