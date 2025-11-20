@@ -2,9 +2,9 @@
 import React, { useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Circle, useMapEvents, useMap } from "react-leaflet";
 import L from "leaflet";
-import { geocodeAddress } from "../../services/api";
+import { geocodeAddress } from "../../../services/api";
 import { toast } from "react-toastify";
-import { devLog } from "../../utils/devLog";
+import { devLog } from "../../../utils/devLog";
 
 import "leaflet/dist/leaflet.css";
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";

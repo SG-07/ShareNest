@@ -3,7 +3,7 @@
 // pages
 import Home from "../pages/Home";
 import ItemDetails from "../pages/ItemDetails";
-import AddItem from "../pages/AddItem";
+import AddItem from "../pages/AddItem/AddItem";
 import NotFound from "../pages/NotFound";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
