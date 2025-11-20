@@ -7,8 +7,8 @@ import BorrowHeader from "./components/BorrowHeader";
 import BorrowDetails from "./components/BorrowDetails";
 import BorrowCalendar from "./components/BorrowCalendar";
 import BorrowQuantity from "./components/BorrowQuantity";
-import BorrowDeliveryOptions from "./components/BorrowDeliveryOptions";
-import BorrowPaymentOptions from "./components/BorrowPaymentOptions";
+import BorrowDeliveryOptions from "./components/DeliveryOptions";
+import BorrowPaymentOptions from "./components/PaymentOptions";
 import BorrowDiscount from "./components/BorrowDiscount";
 import BorrowFees from "./components/BorrowFees";
 import BorrowSummary from "./components/BorrowSummary";
@@ -23,7 +23,7 @@ export default function BorrowItem() {
   const navigate = useNavigate();
 
   const [item, setItem] = useState(null);
-  const [dates, setDates] = useState(null); // { start, end }
+  const [dates, setDates] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [deliveryOption, setDeliveryOption] = useState("pickup");
   const [paymentMethod, setPaymentMethod] = useState("online");

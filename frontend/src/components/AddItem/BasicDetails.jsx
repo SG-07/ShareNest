@@ -1,57 +1,70 @@
 // src/components/AddItem/BasicDetails.jsx
-import React from "react";
-
 export default function BasicDetails({ form, setField }) {
   return (
-    <>
+    <div className="space-y-4">
+      
+      {/* Name */}
       <div>
-        <label className="block font-medium mb-1">Name</label>
+        <label className="block font-medium mb-1">Item Name</label>
         <input
           type="text"
-          name="name"
           value={form.name}
           onChange={(e) => setField("name", e.target.value)}
-          className="w-full border rounded px-3 py-2"
-          required
+          className="w-full border p-2 rounded"
+          placeholder="Drill Machine"
         />
       </div>
 
+      {/* Description */}
       <div>
         <label className="block font-medium mb-1">Description</label>
         <textarea
-          name="description"
           value={form.description}
           onChange={(e) => setField("description", e.target.value)}
-          className="w-full border rounded px-3 py-2"
-          rows={3}
+          className="w-full border p-2 rounded"
+          placeholder="Explain item details..."
         />
       </div>
 
+      {/* Category */}
       <div>
         <label className="block font-medium mb-1">Category</label>
         <input
           type="text"
-          name="category"
           value={form.category}
           onChange={(e) => setField("category", e.target.value)}
-          className="w-full border rounded px-3 py-2"
+          className="w-full border p-2 rounded"
+          placeholder="Tools, Electronics, etc."
         />
       </div>
 
+      {/* Condition */}
       <div>
         <label className="block font-medium mb-1">Condition</label>
         <select
-          name="condition"
           value={form.condition}
           onChange={(e) => setField("condition", e.target.value)}
-          className="w-full border rounded px-3 py-2"
+          className="w-full border p-2 rounded"
         >
-          <option value="NEW">New</option>
           <option value="GOOD">Good</option>
-          <option value="FAIR">Fair</option>
-          <option value="POOR">Poor</option>
+          <option value="AVERAGE">Average</option>
+          <option value="EXCELLENT">Excellent</option>
         </select>
       </div>
-    </>
+
+      {/* ✅ Quantity */}
+      <div>
+        <label className="block font-medium mb-1">Quantity Available</label>
+        <input
+          type="number"
+          min="1"
+          value={form.quantity}
+          onChange={(e) => setField("quantity", e.target.value)}
+          className="w-full border p-2 rounded"
+          placeholder="How many items available?"
+        />
+      </div>
+
+    </div>
   );
 }

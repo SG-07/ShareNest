@@ -45,18 +45,33 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
 
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                        // ----------------------------------------
+                        // PUBLIC ENDPOINTS
+                        // ----------------------------------------
                         .requestMatchers("/", "/healthz").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/check-username", "/api/auth/check-email").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/items/**", "/api/trust-score/**", "/api/map-items")
-                        .permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/auth/check-username",
+                                "/api/auth/check-email"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/items/**",
+                                "/api/trust-score/**",
+                                "/api/map-items"
+                        ).permitAll()
 
-                        // Protected endpoints
-                        .requestMatchers(HttpMethod.POST, "/api/items").authenticated()   // Add item
+                        // ----------------------------------------
+                        // PROTECTED ITEM ENDPOINTS
+                        // ----------------------------------------
+
+                        .requestMatchers(HttpMethod.POST, "/api/items").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/items/{itemId}/request").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/items/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/items/**").hasAnyRole("USER", "ADMIN")
 
+                        // ----------------------------------------
+                        // EVERYTHING ELSE
+                        // ----------------------------------------
                         .anyRequest().authenticated()
                 )
 

@@ -23,8 +23,12 @@ import java.util.List;
 public class ItemController {
 
     private static final Logger logger = LoggerFactory.getLogger(ItemController.class);
+
     private final ItemService itemService;
 
+    // ----------------------------------------------------
+    // ADD ITEM
+    // ----------------------------------------------------
     @PostMapping(
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
@@ -44,6 +48,9 @@ public class ItemController {
         return ResponseEntity.ok(ItemResponse.fromEntity(saved));
     }
 
+    // ----------------------------------------------------
+    // GET ALL AVAILABLE ITEMS
+    // ----------------------------------------------------
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<ItemResponse>> getAllAvailableItems() {
 
@@ -53,12 +60,18 @@ public class ItemController {
         return ResponseEntity.ok(responses);
     }
 
+    // ----------------------------------------------------
+    // GET ITEM BY ID
+    // ----------------------------------------------------
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ItemResponse> getItemById(@PathVariable String id) {
         Item item = itemService.getItemById(id);
         return ResponseEntity.ok(ItemResponse.fromEntity(item));
     }
 
+    // ----------------------------------------------------
+    // UPDATE ITEM
+    // ----------------------------------------------------
     @PutMapping(
             value = "/{id}",
             consumes = MediaType.APPLICATION_JSON_VALUE,
@@ -82,6 +95,9 @@ public class ItemController {
         return ResponseEntity.ok(ItemResponse.fromEntity(saved));
     }
 
+    // ----------------------------------------------------
+    // DELETE ITEM
+    // ----------------------------------------------------
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteItem(@PathVariable String id, Authentication auth) {
 
@@ -95,8 +111,13 @@ public class ItemController {
         return ResponseEntity.ok("Item deleted successfully");
     }
 
+    // ----------------------------------------------------
+    // GET MY ITEMS
+    // ----------------------------------------------------
     @GetMapping("/my")
     public ResponseEntity<List<ItemResponse>> getMyItems(Authentication auth) {
+
+        if (auth == null) throw new BadRequestException("Authentication required.");
 
         String username = auth.getName();
         List<Item> items = itemService.getMyItems(username);
@@ -106,8 +127,13 @@ public class ItemController {
         );
     }
 
+    // ----------------------------------------------------
+    // GET MY AVAILABLE ITEMS
+    // ----------------------------------------------------
     @GetMapping("/my/available")
     public ResponseEntity<List<ItemResponse>> getMyAvailableItems(Authentication auth) {
+
+        if (auth == null) throw new BadRequestException("Authentication required.");
 
         String username = auth.getName();
         List<Item> items = itemService.getMyAvailableItems(username);
@@ -117,9 +143,9 @@ public class ItemController {
         );
     }
 
-    // ------------------------------
-    // DTO → Entity Mapper
-    // ------------------------------
+    // ----------------------------------------------------
+    // DTO → ENTITY MAPPER
+    // ----------------------------------------------------
     private Item mapDtoToItem(ItemDto dto) {
         Item item = new Item();
 
@@ -132,18 +158,31 @@ public class ItemController {
         item.setLongitude(dto.getLongitude());
         item.setAvailable(dto.getAvailable() != null ? dto.getAvailable() : true);
 
-        // --- Fixed merge conflict ---
         item.setImageUrls(dto.getImageUrls() != null ? dto.getImageUrls() : new ArrayList<>());
+
         item.setTags(dto.getTags() != null ? dto.getTags() : new ArrayList<>());
 
-        // address
         item.setCity(dto.getCity());
         item.setState(dto.getState());
         item.setCountry(dto.getCountry());
         item.setStreet(dto.getStreet());
         item.setPincode(dto.getPincode());
 
+        item.setPricePerDay(dto.getPricePerDay());
+        item.setSecurityDeposit(dto.getSecurityDeposit());
+        item.setDeliveryCharge(dto.getDeliveryCharge());
+
+        item.setQuantity(dto.getQuantity());
+
+        item.setAvailableFrom(dto.getAvailableFrom());
+        item.setAvailableUntil(dto.getAvailableUntil());
+
+        item.setMinRentalDays(dto.getMinRentalDays());
+        item.setMaxRentalDays(dto.getMaxRentalDays());
+
+        item.setOwnerId(dto.getOwnerId());
+        item.setDeliveryOption(dto.getDeliveryOption());
+
         return item;
     }
 }
-

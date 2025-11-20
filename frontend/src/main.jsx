@@ -10,6 +10,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { SearchProvider } from "./context/SearchContext";
 import "leaflet/dist/leaflet.css";
+import "react-calendar/dist/Calendar.css";
 
 
 const root = createRoot(document.getElementById("root"));
