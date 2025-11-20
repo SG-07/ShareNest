@@ -1,19 +1,21 @@
 // src/pages/AddItem/AddItem.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { createItem, uploadImage } from "../services/api";
-import Loading from "../components/common/Loading";
-import ErrorBanner from "../components/common/Error";
-import { devLog } from "../utils/devLog";
+import { createItem, uploadImage } from "../../services/api";
+import Loading from "../../components/common/Loading";
+import ErrorBanner from "../../components/common/Error";
+import { devLog } from "../../utils/devLog";
 import { toast } from "react-toastify";
 
-/* Components */
-import BasicDetails from "../components/AddItem/BasicDetails";
-import PricingDetails from "../components/AddItem/PricingDetails";
-import RentalRules from "../components/AddItem/RentalRules";
-import DeliveryOptions from "../components/AddItem/DeliveryOptions";
-import ImageUploader from "../components/AddItem/ImageUploader";
-import LocationPicker from "../components/AddItem/LocationPicker";
+/* Centralized Component Imports */
+import {
+  BasicDetails,
+  PricingDetails,
+  RentalRules,
+  DeliveryOptions,
+  ImageUploader,
+  LocationPicker,
+} from "./components";
 
 export default function AddItem() {
   const navigate = useNavigate();
@@ -25,7 +27,7 @@ export default function AddItem() {
     condition: "GOOD",
     available: true,
     pricePerDay: "",
-    quantity: "",          
+    quantity: "",
     tags: "",
     street: "",
     city: "",
@@ -47,34 +49,47 @@ export default function AddItem() {
   const [error, setError] = useState(null);
 
   const setField = (name, value) => {
+    devLog("📝 Field Update", `${name} → ${value}`, value);
+
+    // Extra debug logs
+    if (name === "tags") devLog("🏷 Tags Updated", value);
+    if (name === "deliveryCharge") devLog("💰 Delivery Charge Updated", value);
+    if (name === "deliveryOption") devLog("🚚 Delivery Option Updated", value);
+    if (["street", "city", "state", "country", "pincode"].includes(name))
+      devLog("📍 Address Updated", { [name]: value });
+
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const validate = () => {
+    devLog("🔍 Validate", "Validation started", form);
+
     if (!form.name) return toast.error("Item name is required.");
     if (!form.pincode || !form.state || !form.country)
       return toast.error("Pincode, state and country are required.");
+
     if (!form.pricePerDay || Number(form.pricePerDay) <= 0)
       return toast.error("Price per day must be greater than 0.");
 
-    // ✅ NEW QUANTITY VALIDATION
     if (!form.quantity || Number(form.quantity) <= 0)
       return toast.error("Quantity must be at least 1.");
 
-    if (imageFiles.length < 1) return toast.error("Please upload at least 1 image.");
-    if (imageFiles.length > 3) return toast.error("Maximum 3 images allowed.");
+    if (imageFiles.length < 1)
+      return toast.error("Please upload at least 1 image.");
+    if (imageFiles.length > 3)
+      return toast.error("Maximum 3 images allowed.");
 
     if (form.minRentalDays && form.maxRentalDays) {
-      if (Number(form.minRentalDays) > Number(form.maxRentalDays)) {
+      if (Number(form.minRentalDays) > Number(form.maxRentalDays))
         return toast.error("Min rental duration cannot exceed max.");
-      }
     }
 
-    if ((form.deliveryOption === "DELIVERY" || form.deliveryOption === "BOTH")) {
+    if (["DELIVERY", "BOTH"].includes(form.deliveryOption)) {
       if (form.deliveryCharge === "" || Number(form.deliveryCharge) < 0)
         return toast.error("Invalid delivery charge.");
     }
 
+    devLog("✔ Validate", "All validations passed");
     return true;
   };
 
@@ -82,17 +97,25 @@ export default function AddItem() {
     e.preventDefault();
     setError(null);
 
-    if (!validate()) return;
+    devLog("📨 Submit", "Submit triggered");
+
+    if (!validate()) {
+      devLog("❌ Submit", "Validation failed → Submission stopped");
+      return;
+    }
 
     const user = JSON.parse(localStorage.getItem("user"));
     const token = localStorage.getItem("jwtToken");
 
     if (!user || !token) {
+      devLog("❌ Submit", "User not logged in");
       return toast.error("You must be logged in to add an item.");
     }
 
     setLoading(true);
+
     try {
+      // Upload images
       const uploadedUrls = [];
       for (let f of imageFiles) {
         const url = await uploadImage(f);
@@ -110,9 +133,8 @@ export default function AddItem() {
         imageUrls: uploadedUrls,
         pricePerDay: Number(form.pricePerDay),
 
-        // ✅ TAGS CLEAN UP
         tags: form.tags
-          ? form.tags.split(",").map(t => t.trim()).filter(Boolean)
+          ? form.tags.split(",").map((t) => t.trim()).filter(Boolean)
           : [],
 
         street: form.street,
@@ -120,30 +142,38 @@ export default function AddItem() {
         state: form.state,
         country: form.country,
         pincode: form.pincode,
+
         safetyNotes: form.safetyNotes,
         deliveryOption: form.deliveryOption,
         deliveryCharge:
-          form.deliveryOption === "PICKUP" ? 0 : Number(form.deliveryCharge || 0),
+          form.deliveryOption === "PICKUP"
+            ? 0
+            : Number(form.deliveryCharge || 0),
+
         minRentalDays: form.minRentalDays ? Number(form.minRentalDays) : null,
         maxRentalDays: form.maxRentalDays ? Number(form.maxRentalDays) : null,
-        securityDeposit: form.securityDeposit ? Number(form.securityDeposit) : 0,
+        securityDeposit: form.securityDeposit
+          ? Number(form.securityDeposit)
+          : 0,
 
-        // ✅ NEW QUANTITY FIELD
         quantity: Number(form.quantity),
 
         ownerId: user?.id || user?._id,
       };
 
       const res = await createItem(payload);
+
       toast.success("Item added successfully!");
 
-      const id = res?.data?.id || res?.data?._id;
-      navigate(id ? `/items/${id}` : "/");
+      const itemId = res?.data?.id || res?.data?._id;
+
+      navigate(itemId ? `/items/${itemId}` : "/");
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
         err.message ||
         "Failed to create item";
+
       setError(msg);
       toast.error(msg);
     } finally {

@@ -1,7 +1,7 @@
 // src/components/AddItem/ImageUploader.jsx
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { devLog } from "../../utils/devLog";
+import { devLog } from "../../../utils/devLog";
 
 /**
  * Props:
