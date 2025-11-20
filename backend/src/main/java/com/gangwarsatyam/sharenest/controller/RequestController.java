@@ -1,11 +1,15 @@
 package com.gangwarsatyam.sharenest.controller;
 
-import com.gangwarsatyam.sharenest.service.RequestService;
+import com.gangwarsatyam.sharenest.dto.RequestDto;
 import com.gangwarsatyam.sharenest.model.Request;
 import com.gangwarsatyam.sharenest.model.User;
+import com.gangwarsatyam.sharenest.service.RequestService;
+import com.gangwarsatyam.sharenest.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,53 +19,113 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RequestController {
 
+    private static final Logger logger = LoggerFactory.getLogger(RequestController.class);
+
     private final RequestService requestService;
+    private final UserRepository userRepository;
 
-    // ✅ Submit a borrow request
-    @PostMapping("/{itemId}")
-    public ResponseEntity<Request> requestToBorrow(
-            @PathVariable String itemId,
-            @AuthenticationPrincipal User borrower) {
+    // ----------------------------------------------------
+    // SUBMIT REQUEST
+    // ----------------------------------------------------
+    @PostMapping
+    public ResponseEntity<Request> submitRequest(
+            @RequestBody RequestDto dto,
+            Authentication auth
+    ) {
+        if (auth == null) {
+            throw new RuntimeException("Authentication required.");
+        }
 
-        Request req = requestService.submitRequest(itemId, borrower.getId());
-        return ResponseEntity.ok(req);
+        String username = auth.getName();
+        logger.debug("[RequestController] Submit request by {}", username);
+
+        String borrowerId = userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        Request saved = requestService.submitRequest(dto, borrowerId);
+        return ResponseEntity.ok(saved);
     }
 
-    // ✅ Cancel a borrow request
+    // ----------------------------------------------------
+    // CANCEL REQUEST (Borrower)
+    // ----------------------------------------------------
     @PostMapping("/{requestId}/cancel")
     public ResponseEntity<Void> cancelRequest(
             @PathVariable String requestId,
-            @AuthenticationPrincipal User borrower) {
+            Authentication auth
+    ) {
+        if (auth == null) throw new RuntimeException("Authentication required.");
 
-        requestService.cancelRequest(requestId, borrower.getId());
+        String username = auth.getName();
+        String borrowerId = userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElseThrow();
+
+        requestService.cancelRequest(requestId, borrowerId);
+
         return ResponseEntity.noContent().build();
     }
 
-    // ✅ Get all requests made by the logged-in borrower
+    // ----------------------------------------------------
+    // GET MY SENT REQUESTS (Borrower)
+    // ----------------------------------------------------
     @GetMapping("/my")
-    public ResponseEntity<List<Request>> myRequests(@AuthenticationPrincipal User borrower) {
-        return ResponseEntity.ok(requestService.getRequestsByBorrower(borrower.getId()));
+    public ResponseEntity<List<Request>> myRequests(Authentication auth) {
+
+        String username = auth.getName();
+        String borrowerId = userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElseThrow();
+
+        return ResponseEntity.ok(requestService.getRequestsByBorrower(borrowerId));
     }
 
-    // ✅ Get all requests received by the logged-in owner
+    // ----------------------------------------------------
+    // GET REQUESTS RECEIVED (Owner)
+    // ----------------------------------------------------
     @GetMapping("/received")
-    public ResponseEntity<List<Request>> receivedRequests(@AuthenticationPrincipal User owner) {
-        return ResponseEntity.ok(requestService.getRequestsByOwner(owner.getId()));
+    public ResponseEntity<List<Request>> receivedRequests(Authentication auth) {
+
+        String username = auth.getName();
+        String ownerId = userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElseThrow();
+
+        return ResponseEntity.ok(requestService.getRequestsByOwner(ownerId));
     }
 
+    // ----------------------------------------------------
+    // ACCEPT REQUEST (Owner)
+    // ----------------------------------------------------
     @PostMapping("/{requestId}/accept")
     public ResponseEntity<Void> acceptRequest(
             @PathVariable String requestId,
-            @AuthenticationPrincipal User owner) {
-        requestService.acceptRequest(requestId, owner.getId());
+            Authentication auth
+    ) {
+        String username = auth.getName();
+        String ownerId = userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElseThrow();
+
+        requestService.acceptRequest(requestId, ownerId);
         return ResponseEntity.noContent().build();
     }
 
+    // ----------------------------------------------------
+    // DECLINE REQUEST (Owner)
+    // ----------------------------------------------------
     @PostMapping("/{requestId}/decline")
     public ResponseEntity<Void> declineRequest(
             @PathVariable String requestId,
-            @AuthenticationPrincipal User owner) {
-        requestService.declineRequest(requestId, owner.getId());
+            Authentication auth
+    ) {
+        String username = auth.getName();
+        String ownerId = userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElseThrow();
+
+        requestService.declineRequest(requestId, ownerId);
         return ResponseEntity.noContent().build();
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,13 +19,17 @@ public class Item {
 
     private String name;
     private String description;
-    private int quantity;
 
     private String ownerId;
     private String category;
 
     private ItemCondition condition;
 
+    /**
+     * ⚠ IMPORTANT:
+     * Do NOT set `available = false` automatically on request creation.
+     * Availability must depend on quantity OR owner approval.
+     */
     private boolean available = true;
 
     private List<String> imageUrls = new ArrayList<>();
@@ -40,6 +45,23 @@ public class Item {
     private String street;
     private String pincode;
 
+    // Rental settings
+    private double pricePerDay;
+    private double securityDeposit;
+    private double deliveryCharge;
+
+    private int quantity;
+
+    private LocalDate availableFrom;
+    private LocalDate availableUntil;
+
+    private int minRentalDays;
+    private int maxRentalDays;
+
+    // PICKUP | DELIVERY | BOTH
+    private String deliveryOption;
+
+    // Stats
     private int views = 0;
     private int likes = 0;
 
@@ -62,9 +84,6 @@ public class Item {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public int getQuantity() { return quantity; }
-    public void setQuantity(int quantity) { this.quantity = quantity; }
-
     public String getOwnerId() { return ownerId; }
     public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
 
@@ -75,6 +94,11 @@ public class Item {
     public void setCondition(ItemCondition condition) { this.condition = condition; }
 
     public boolean isAvailable() { return available; }
+
+    /**
+     * Set available manually only by owner or admin.
+     * System should NOT auto-disable item on request.
+     */
     public void setAvailable(boolean available) { this.available = available; }
 
     public List<String> getImageUrls() { return imageUrls; }
@@ -107,6 +131,33 @@ public class Item {
 
     public String getPincode() { return pincode; }
     public void setPincode(String pincode) { this.pincode = pincode; }
+
+    public double getPricePerDay() { return pricePerDay; }
+    public void setPricePerDay(double pricePerDay) { this.pricePerDay = pricePerDay; }
+
+    public double getSecurityDeposit() { return securityDeposit; }
+    public void setSecurityDeposit(double securityDeposit) { this.securityDeposit = securityDeposit; }
+
+    public double getDeliveryCharge() { return deliveryCharge; }
+    public void setDeliveryCharge(double deliveryCharge) { this.deliveryCharge = deliveryCharge; }
+
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
+
+    public LocalDate getAvailableFrom() { return availableFrom; }
+    public void setAvailableFrom(LocalDate availableFrom) { this.availableFrom = availableFrom; }
+
+    public LocalDate getAvailableUntil() { return availableUntil; }
+    public void setAvailableUntil(LocalDate availableUntil) { this.availableUntil = availableUntil; }
+
+    public int getMinRentalDays() { return minRentalDays; }
+    public void setMinRentalDays(int minRentalDays) { this.minRentalDays = minRentalDays; }
+
+    public int getMaxRentalDays() { return maxRentalDays; }
+    public void setMaxRentalDays(int maxRentalDays) { this.maxRentalDays = maxRentalDays; }
+
+    public String getDeliveryOption() { return deliveryOption; }
+    public void setDeliveryOption(String deliveryOption) { this.deliveryOption = deliveryOption; }
 
     public int getViews() { return views; }
     public void setViews(int views) { this.views = views; }

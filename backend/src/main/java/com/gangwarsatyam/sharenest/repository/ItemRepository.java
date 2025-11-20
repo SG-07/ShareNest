@@ -6,12 +6,12 @@ import java.util.List;
 
 public interface ItemRepository extends MongoRepository<Item, String> {
 
-    // Get all available items
+    // Get items marked available
     List<Item> findByAvailableTrue();
 
     // Get all items owned by a user
     List<Item> findByOwnerId(String ownerId);
 
-    // Get available items owned by a user
+    // Get only available items owned by a user
     List<Item> findByOwnerIdAndAvailableTrue(String ownerId);
 }

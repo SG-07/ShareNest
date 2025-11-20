@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import com.gangwarsatyam.sharenest.model.ItemCondition;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -23,7 +24,6 @@ public class ItemDto {
     @NotBlank
     private String category;
 
-    // Correct: Enum, not string
     @NotNull
     private ItemCondition condition;
 
@@ -41,10 +41,26 @@ public class ItemDto {
     @NotNull
     private Double longitude;
 
-    // Correct: frontend will send list of URLs
     private List<String> imageUrls;
 
-    // Optional tags
     private List<String> tags;
-}
 
+    // -----------------------------
+    // NEW FIELDS USED IN CONTROLLER
+    // -----------------------------
+
+    private Double pricePerDay;
+    private Double securityDeposit;
+    private Double deliveryCharge;
+
+    private Integer quantity;
+
+    private LocalDate availableFrom;
+    private LocalDate availableUntil;
+
+    private Integer minRentalDays;
+    private Integer maxRentalDays;
+
+    private String ownerId;
+    private String deliveryOption;
+}

@@ -25,6 +25,7 @@ export default function AddItem() {
     condition: "GOOD",
     available: true,
     pricePerDay: "",
+    quantity: "",          
     tags: "",
     street: "",
     city: "",
@@ -55,6 +56,11 @@ export default function AddItem() {
       return toast.error("Pincode, state and country are required.");
     if (!form.pricePerDay || Number(form.pricePerDay) <= 0)
       return toast.error("Price per day must be greater than 0.");
+
+    // ✅ NEW QUANTITY VALIDATION
+    if (!form.quantity || Number(form.quantity) <= 0)
+      return toast.error("Quantity must be at least 1.");
+
     if (imageFiles.length < 1) return toast.error("Please upload at least 1 image.");
     if (imageFiles.length > 3) return toast.error("Maximum 3 images allowed.");
 
@@ -103,9 +109,12 @@ export default function AddItem() {
         longitude: form.longitude ? parseFloat(form.longitude) : null,
         imageUrls: uploadedUrls,
         pricePerDay: Number(form.pricePerDay),
+
+        // ✅ TAGS CLEAN UP
         tags: form.tags
           ? form.tags.split(",").map(t => t.trim()).filter(Boolean)
           : [],
+
         street: form.street,
         city: form.city,
         state: form.state,
@@ -118,6 +127,10 @@ export default function AddItem() {
         minRentalDays: form.minRentalDays ? Number(form.minRentalDays) : null,
         maxRentalDays: form.maxRentalDays ? Number(form.maxRentalDays) : null,
         securityDeposit: form.securityDeposit ? Number(form.securityDeposit) : 0,
+
+        // ✅ NEW QUANTITY FIELD
+        quantity: Number(form.quantity),
+
         ownerId: user?.id || user?._id,
       };
 

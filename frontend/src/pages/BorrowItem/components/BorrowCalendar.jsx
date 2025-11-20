@@ -1,5 +1,6 @@
 // src/pages/BorrowItem/components/BorrowCalendar.jsx
 import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 export default function BorrowCalendar({ item, dates, setDates }) {
   const unavailable = item.unavailableDates || [];
