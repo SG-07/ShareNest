@@ -1,9 +1,9 @@
 package com.gangwarsatyam.sharenest.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.gangwarsatyam.sharenest.model.ItemCondition;
+import jakarta.validation.constraints.*;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,54 +13,77 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ItemDto {
 
-    @NotBlank
+    @NotBlank(message = "Item name is required.")
     private String name;
 
-    @NotBlank
+    @NotBlank(message = "Description is required.")
     private String description;
 
-    @NotBlank
+    @NotBlank(message = "Category is required.")
     private String category;
 
-    @NotNull
+    @NotNull(message = "Item condition is required.")
     private ItemCondition condition;
 
     private Boolean available;
 
+    // -----------------------------
+    // LOCATION FIELDS (Optional but validated)
+    // -----------------------------
     private String city;
     private String state;
     private String country;
     private String street;
+
+    @Pattern(regexp = "^[0-9]{5,6}$", message = "Invalid pincode.")
     private String pincode;
 
-    @NotNull
+    // -----------------------------
+    // GEO COORDINATES
+    // -----------------------------
+    @NotNull(message = "Latitude is required.")
+    @DecimalMin(value = "-90.0") @DecimalMax(value = "90.0")
     private Double latitude;
 
-    @NotNull
+    @NotNull(message = "Longitude is required.")
+    @DecimalMin(value = "-180.0") @DecimalMax(value = "180.0")
     private Double longitude;
 
-    private List<String> imageUrls;
+    @Size(max = 10, message = "Maximum 10 images allowed.")
+    private List<@NotBlank String> imageUrls;
 
-    private List<String> tags;
+    private List<@NotBlank String> tags;
 
     // -----------------------------
-    // NEW FIELDS USED IN CONTROLLER
+    // RENTAL FIELDS
     // -----------------------------
-
+    @PositiveOrZero(message = "Price per day must be ≥ 0.")
     private Double pricePerDay;
+
+    @PositiveOrZero(message = "Security deposit must be ≥ 0.")
     private Double securityDeposit;
+
+    @PositiveOrZero(message = "Delivery charge must be ≥ 0.")
     private Double deliveryCharge;
 
+    @Positive(message = "Quantity must be greater than 0.")
     private Integer quantity;
 
+    // -----------------------------
+    // AVAILABILITY WINDOW
+    // -----------------------------
     private LocalDate availableFrom;
     private LocalDate availableUntil;
 
+    @Positive(message = "Min rental days must be > 0.")
     private Integer minRentalDays;
+
+    @Positive(message = "Max rental days must be > 0.")
     private Integer maxRentalDays;
 
-    private String ownerId;
     private String deliveryOption;
 }

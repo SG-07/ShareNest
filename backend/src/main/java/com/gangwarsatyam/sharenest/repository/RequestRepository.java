@@ -8,13 +8,15 @@ import java.util.List;
 
 public interface RequestRepository extends MongoRepository<Request, String> {
 
+    // Borrower perspective (requests the user SENT)
     List<Request> findByBorrowerId(String borrowerId);
 
+    // Owner perspective (requests the user RECEIVED)
     List<Request> findByOwnerId(String ownerId);
 
-    // 🔥 Fetch all active (blocking) requests for an item
+    // For validating overlapping bookings (active + accepted)
     List<Request> findByItemIdAndStatusIn(String itemId, List<RequestStatus> statuses);
 
-    // Get all requests for a particular item
+    // Optional: get all requests for a given item
     List<Request> findByItemId(String itemId);
 }

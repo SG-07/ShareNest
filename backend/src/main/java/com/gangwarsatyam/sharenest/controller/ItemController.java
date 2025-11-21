@@ -1,6 +1,8 @@
 package com.gangwarsatyam.sharenest.controller;
 
 import com.gangwarsatyam.sharenest.dto.ItemDto;
+import com.gangwarsatyam.sharenest.model.Request;
+import com.gangwarsatyam.sharenest.dto.RequestDto;
 import com.gangwarsatyam.sharenest.dto.ItemResponse;
 import com.gangwarsatyam.sharenest.exception.BadRequestException;
 import com.gangwarsatyam.sharenest.model.Item;
@@ -8,6 +10,7 @@ import com.gangwarsatyam.sharenest.service.ItemService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -16,6 +19,7 @@ import jakarta.validation.Valid;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/items")
@@ -26,6 +30,9 @@ public class ItemController {
 
     private final ItemService itemService;
 
+    @Value("${app.debug:false}")
+    private boolean debug;
+
     // ----------------------------------------------------
     // ADD ITEM
     // ----------------------------------------------------
@@ -33,17 +40,29 @@ public class ItemController {
             consumes = MediaType.APPLICATION_JSON_VALUE,
             produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity<ItemResponse> addItem(@Valid @RequestBody ItemDto dto, Authentication auth) {
+    public ResponseEntity<ItemResponse> addItem(
+            @Valid @RequestBody ItemDto dto,
+            Authentication auth
+    ) {
+        String username = extractUsername(auth);
 
-        if (auth == null) {
-            throw new BadRequestException("Authentication is required to add an item.");
+        if (debug) logger.debug("[ItemController] addItem() called by '{}' with dto: {}", username, dto);
+
+        Item item = mapDtoToItem(dto);   // owner NOT set here
+
+        if (debug) logger.debug("[ItemController] Mapped DTO -> Item (before save): {}", safeToString(item));
+
+        Item saved;
+        try {
+            saved = itemService.addItem(item, username);  // owner set inside service
+        } catch (RuntimeException ex) {
+            logger.error("[ItemController] addItem() failed for user='{}', item='{}'. Error: {}",
+                    username, item.getName(), ex.getMessage(), ex);
+            throw ex;
         }
 
-        String username = auth.getName();
-        logger.debug("[ItemController] Add item request by '{}': {}", username, dto);
-
-        Item item = mapDtoToItem(dto);
-        Item saved = itemService.addItem(item, username);
+        if (debug) logger.debug("[ItemController] Item saved: id={}, owner={}, name={}",
+                saved.getId(), saved.getOwnerId(), saved.getName());
 
         return ResponseEntity.ok(ItemResponse.fromEntity(saved));
     }
@@ -54,10 +73,13 @@ public class ItemController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<List<ItemResponse>> getAllAvailableItems() {
 
-        List<Item> list = itemService.getAllAvailableItems();
-        List<ItemResponse> responses = list.stream().map(ItemResponse::fromEntity).toList();
+        if (debug) logger.debug("[ItemController] getAllAvailableItems() called");
 
-        return ResponseEntity.ok(responses);
+        List<Item> list = itemService.getAllAvailableItems();
+
+        if (debug) logger.debug("[ItemController] Retrieved {} available items", list.size());
+
+        return ResponseEntity.ok(list.stream().map(ItemResponse::fromEntity).toList());
     }
 
     // ----------------------------------------------------
@@ -65,7 +87,13 @@ public class ItemController {
     // ----------------------------------------------------
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ItemResponse> getItemById(@PathVariable String id) {
+
+        if (debug) logger.debug("[ItemController] getItemById() called for id={}", id);
+
         Item item = itemService.getItemById(id);
+
+        if (debug) logger.debug("[ItemController] Found item: {}", safeToString(item));
+
         return ResponseEntity.ok(ItemResponse.fromEntity(item));
     }
 
@@ -80,17 +108,26 @@ public class ItemController {
     public ResponseEntity<ItemResponse> updateItem(
             @PathVariable String id,
             @Valid @RequestBody ItemDto dto,
-            Authentication auth) {
+            Authentication auth
+    ) {
+        String username = extractUsername(auth);
 
-        if (auth == null) {
-            throw new BadRequestException("Authentication is required to update an item.");
+        if (debug) logger.debug("[ItemController] updateItem() called for id={} by '{}', dto={}", id, username, dto);
+
+        Item updatedItem = mapDtoToItem(dto);  // owner NOT set here
+
+        if (debug) logger.debug("[ItemController] Mapped DTO -> Item (update): {}", safeToString(updatedItem));
+
+        Item saved;
+        try {
+            saved = itemService.updateItem(id, updatedItem, username);
+        } catch (RuntimeException ex) {
+            logger.error("[ItemController] updateItem() failed for id={}, user={}, error={}",
+                    id, username, ex.getMessage(), ex);
+            throw ex;
         }
 
-        String username = auth.getName();
-        logger.debug("[ItemController] Update item {} by user '{}': {}", id, username, dto);
-
-        Item updatedItem = mapDtoToItem(dto);
-        Item saved = itemService.updateItem(id, updatedItem, username);
+        if (debug) logger.debug("[ItemController] updateItem() succeeded for id={}, savedName={}", id, saved.getName());
 
         return ResponseEntity.ok(ItemResponse.fromEntity(saved));
     }
@@ -99,14 +136,23 @@ public class ItemController {
     // DELETE ITEM
     // ----------------------------------------------------
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteItem(@PathVariable String id, Authentication auth) {
+    public ResponseEntity<String> deleteItem(
+            @PathVariable String id,
+            Authentication auth
+    ) {
+        String username = extractUsername(auth);
 
-        if (auth == null) {
-            throw new BadRequestException("Authentication is required to delete an item.");
+        if (debug) logger.debug("[ItemController] deleteItem() called for id={} by '{}'", id, username);
+
+        try {
+            itemService.deleteItem(id, username);
+        } catch (RuntimeException ex) {
+            logger.error("[ItemController] deleteItem() failed for id={}, user={}, error={}",
+                    id, username, ex.getMessage(), ex);
+            throw ex;
         }
 
-        String username = auth.getName();
-        itemService.deleteItem(id, username);
+        if (debug) logger.debug("[ItemController] deleteItem() succeeded for id={} by '{}'", id, username);
 
         return ResponseEntity.ok("Item deleted successfully");
     }
@@ -117,14 +163,15 @@ public class ItemController {
     @GetMapping("/my")
     public ResponseEntity<List<ItemResponse>> getMyItems(Authentication auth) {
 
-        if (auth == null) throw new BadRequestException("Authentication required.");
+        String username = extractUsername(auth);
 
-        String username = auth.getName();
+        if (debug) logger.debug("[ItemController] getMyItems() called by '{}'", username);
+
         List<Item> items = itemService.getMyItems(username);
 
-        return ResponseEntity.ok(
-                items.stream().map(ItemResponse::fromEntity).toList()
-        );
+        if (debug) logger.debug("[ItemController] getMyItems() returned {} items for '{}'", items.size(), username);
+
+        return ResponseEntity.ok(items.stream().map(ItemResponse::fromEntity).toList());
     }
 
     // ----------------------------------------------------
@@ -133,18 +180,35 @@ public class ItemController {
     @GetMapping("/my/available")
     public ResponseEntity<List<ItemResponse>> getMyAvailableItems(Authentication auth) {
 
-        if (auth == null) throw new BadRequestException("Authentication required.");
+        String username = extractUsername(auth);
 
-        String username = auth.getName();
+        if (debug) logger.debug("[ItemController] getMyAvailableItems() called by '{}'", username);
+
         List<Item> items = itemService.getMyAvailableItems(username);
 
-        return ResponseEntity.ok(
-                items.stream().map(ItemResponse::fromEntity).toList()
-        );
+        if (debug) logger.debug("[ItemController] getMyAvailableItems() returned {} items for '{}'", items.size(), username);
+
+        return ResponseEntity.ok(items.stream().map(ItemResponse::fromEntity).toList());
     }
 
     // ----------------------------------------------------
-    // DTO → ENTITY MAPPER
+    // Item Request
+    // ----------------------------------------------------
+
+    @PostMapping("/{itemId}/request")
+    public ResponseEntity<Request> requestItem(
+            @PathVariable String itemId,
+            @Valid @RequestBody RequestDto dto,
+            Authentication auth
+    ) {
+        String username = auth.getName();
+        Request req = itemService.requestItem(itemId, dto, username);
+        return ResponseEntity.ok(req);
+    }
+
+
+    // ----------------------------------------------------
+    // DTO → ENTITY MAPPER  (ownerId removed)
     // ----------------------------------------------------
     private Item mapDtoToItem(ItemDto dto) {
         Item item = new Item();
@@ -154,12 +218,11 @@ public class ItemController {
         item.setCategory(dto.getCategory());
         item.setCondition(dto.getCondition());
 
-        item.setLatitude(dto.getLatitude());
-        item.setLongitude(dto.getLongitude());
+        item.setLatitude(dto.getLatitude() != null ? dto.getLatitude() : 0.0);
+        item.setLongitude(dto.getLongitude() != null ? dto.getLongitude() : 0.0);
         item.setAvailable(dto.getAvailable() != null ? dto.getAvailable() : true);
 
         item.setImageUrls(dto.getImageUrls() != null ? dto.getImageUrls() : new ArrayList<>());
-
         item.setTags(dto.getTags() != null ? dto.getTags() : new ArrayList<>());
 
         item.setCity(dto.getCity());
@@ -168,21 +231,47 @@ public class ItemController {
         item.setStreet(dto.getStreet());
         item.setPincode(dto.getPincode());
 
-        item.setPricePerDay(dto.getPricePerDay());
-        item.setSecurityDeposit(dto.getSecurityDeposit());
-        item.setDeliveryCharge(dto.getDeliveryCharge());
+        item.setPricePerDay(dto.getPricePerDay() != null ? dto.getPricePerDay() : 0.0);
+        item.setSecurityDeposit(dto.getSecurityDeposit() != null ? dto.getSecurityDeposit() : 0.0);
+        item.setDeliveryCharge(dto.getDeliveryCharge() != null ? dto.getDeliveryCharge() : 0.0);
 
-        item.setQuantity(dto.getQuantity());
+        item.setQuantity(dto.getQuantity() != null ? dto.getQuantity() : 0);
 
         item.setAvailableFrom(dto.getAvailableFrom());
         item.setAvailableUntil(dto.getAvailableUntil());
 
-        item.setMinRentalDays(dto.getMinRentalDays());
-        item.setMaxRentalDays(dto.getMaxRentalDays());
+        item.setMinRentalDays(dto.getMinRentalDays() != null ? dto.getMinRentalDays() : 0);
+        item.setMaxRentalDays(dto.getMaxRentalDays() != null ? dto.getMaxRentalDays() : 0);
 
-        item.setOwnerId(dto.getOwnerId());
         item.setDeliveryOption(dto.getDeliveryOption());
 
         return item;
+    }
+
+    // ----------------------------------------------------
+    // Extract username from auth
+    // ----------------------------------------------------
+    private String extractUsername(Authentication auth) {
+        if (auth == null) {
+            throw new BadRequestException("Authentication required.");
+        }
+        return auth.getName();
+    }
+
+    // ----------------------------------------------------
+    // Safe debug printer
+    // ----------------------------------------------------
+    private String safeToString(Item item) {
+        if (item == null) return "null";
+
+        return String.format(
+                "Item{id=%s, name=%s, ownerId=%s, category=%s, available=%s, qty=%d}",
+                item.getId(),
+                item.getName(),
+                item.getOwnerId(),
+                item.getCategory(),
+                item.isAvailable(),
+                item.getQuantity()
+        );
     }
 }

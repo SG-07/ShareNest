@@ -12,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@ToString
 public class ItemResponse {
 
     private String id;
@@ -81,7 +82,7 @@ public class ItemResponse {
                 .street(item.getStreet())
                 .pincode(item.getPincode())
 
-                // RENTAL FIELDS
+                // RENTAL INFO
                 .pricePerDay(item.getPricePerDay())
                 .securityDeposit(item.getSecurityDeposit())
                 .deliveryCharge(item.getDeliveryCharge())
@@ -90,6 +91,7 @@ public class ItemResponse {
                 .availableUntil(item.getAvailableUntil())
                 .minRentalDays(item.getMinRentalDays())
                 .maxRentalDays(item.getMaxRentalDays())
+
                 .deliveryOption(item.getDeliveryOption())
 
                 .build();

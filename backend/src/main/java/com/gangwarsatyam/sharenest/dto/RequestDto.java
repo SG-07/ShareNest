@@ -1,6 +1,7 @@
 package com.gangwarsatyam.sharenest.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.util.List;
@@ -12,18 +13,23 @@ import java.util.List;
 @Builder
 public class RequestDto {
 
-    @NotBlank
+    // ---- Required ----
+    @NotBlank(message = "Item ID must not be empty")
     private String itemId;
 
+    // ---- Rental Dates (String -> LocalDate in Service Layer) ----
     private String startDate;
     private String endDate;
 
+    // ---- Rental Duration ----
     private int days;
     private int quantity;
 
-    private String deliveryOption; // "pickup" | "delivery"
-    private String paymentMethod;  // "online" | "cod"
+    // ---- User Preferences ----
+    private String deliveryOption; // pickup | delivery
+    private String paymentMethod;  // online | cod
 
+    // ---- Price Calculations ----
     private double securityDeposit;
     private double pricePerDay;
     private double subtotal;
@@ -35,6 +41,7 @@ public class RequestDto {
 
     private double totalPrice;
 
+    // ---- Extra Details ----
     private String message;
     private List<String> imageUrls;
 }

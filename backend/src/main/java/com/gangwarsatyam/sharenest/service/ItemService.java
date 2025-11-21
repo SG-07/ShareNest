@@ -2,16 +2,24 @@ package com.gangwarsatyam.sharenest.service;
 
 import com.gangwarsatyam.sharenest.model.Item;
 import com.gangwarsatyam.sharenest.model.ItemCondition;
+import com.gangwarsatyam.sharenest.model.Request;
+import com.gangwarsatyam.sharenest.dto.RequestDto;
 import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.repository.ItemRepository;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
+import com.gangwarsatyam.sharenest.service.RequestService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -21,125 +29,254 @@ public class ItemService {
 
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final RequestService requestService;
 
+    @Value("${app.debug:false}")
+    private boolean debug;
+
+    // -----------------------
+    // REQUEST ITEM
+    // -----------------------
+    public Request requestItem(String itemId, RequestDto dto, String username) {
+        if (debug) logger.debug("[ItemService] requestItem() called by '{}' for itemId={}, dto={}", username, itemId, dto);
+
+        // Get borrowerId from username
+        String borrowerId = getOwnerIdFromUsername(username);
+
+        // Ensure dto.itemId matches path param
+        if (!itemId.equals(dto.getItemId())) {
+            throw new IllegalArgumentException("Item ID in path and request body must match");
+        }
+
+        // Delegate to RequestService
+        Request req = requestService.submitRequest(dto, borrowerId);
+
+        if (debug) logger.debug("[ItemService] Request submitted: {}", req.getId());
+        return req;
+    }
+
+    // -----------------------
+    // READ
+    // -----------------------
     public Item getItemById(String id) {
-        logger.debug("[ItemService] Fetching item by id: {}", id);
+        if (debug) logger.debug("[ItemService] getItemById({})", id);
         return itemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Item not found with id: " + id));
     }
 
-    public Item addItem(Item item, String username) {
-
-        String ownerId = userRepository.findByUsername(username)
-                .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
-
-        item.setOwnerId(ownerId);
-
-        // Ensure lists are never null
-        if (item.getImageUrls() == null) item.setImageUrls(new ArrayList<>());
-        if (item.getTags() == null) item.setTags(new ArrayList<>());
-
-        item.setCondition(item.getCondition());
-
-        item.setViews(0);
-        item.setLikes(0);
-
-        Item saved = itemRepository.save(item);
-
-        logger.debug("[ItemService] Added item '{}' by user '{}' (ownerId={})",
-                item.getName(), username, ownerId);
-
-        return saved;
-    }
-
-    public Item updateItem(String itemId, Item updatedItem, String username) {
-
-        Item item = itemRepository.findById(itemId)
-                .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
-
-        String ownerId = userRepository.findByUsername(username)
-                .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
-
-        if (!item.getOwnerId().equals(ownerId)) {
-            throw new RuntimeException("Unauthorized to update this item");
-        }
-
-        // Update basic fields
-        item.setName(updatedItem.getName());
-        item.setDescription(updatedItem.getDescription());
-        item.setCategory(updatedItem.getCategory());
-
-        // Convert string → enum
-        if (item.getCondition() != null) {
-            item.setCondition(
-                    ItemCondition.fromString(item.getCondition().toString())
-            );
-        }
-
-        item.setAvailable(updatedItem.isAvailable());
-        item.setLatitude(updatedItem.getLatitude());
-        item.setLongitude(updatedItem.getLongitude());
-
-        // Safe copy of image URLs
-        item.setImageUrls(
-                updatedItem.getImageUrls() != null ? updatedItem.getImageUrls() : new ArrayList<>()
-        );
-
-        // Safe copy of tags
-        item.setTags(
-                updatedItem.getTags() != null ? updatedItem.getTags() : new ArrayList<>()
-        );
-
-        // Address fields
-        item.setCity(updatedItem.getCity());
-        item.setState(updatedItem.getState());
-        item.setCountry(updatedItem.getCountry());
-        item.setStreet(updatedItem.getStreet());
-        item.setPincode(updatedItem.getPincode());
-
-        Item saved = itemRepository.save(item);
-
-        logger.debug("[ItemService] Updated item '{}' by user '{}' (ownerId={})",
-                saved.getName(), username, ownerId);
-
-        return saved;
-    }
-
     public List<Item> getAllAvailableItems() {
+        if (debug) logger.debug("[ItemService] getAllAvailableItems()");
         return itemRepository.findByAvailableTrue();
     }
 
+    public Page<Item> getAllAvailableItems(Pageable pageable) {
+        if (debug) logger.debug("[ItemService] getAllAvailableItems(pageable) - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        return itemRepository.findByAvailableTrue(pageable);
+    }
+
+    public List<Item> searchItemsByName(String keyword) {
+        if (debug) logger.debug("[ItemService] searchItemsByName('{}')", keyword);
+        return itemRepository.findByNameContainingIgnoreCaseAndAvailableTrue(keyword);
+    }
+
+    public Page<Item> searchItemsByName(String keyword, Pageable pageable) {
+        if (debug) logger.debug("[ItemService] searchItemsByName('{}', pageable)", keyword);
+        return itemRepository.findByNameContainingIgnoreCase(keyword, pageable);
+    }
+
+    public List<Item> filterByCategory(String category) {
+        if (debug) logger.debug("[ItemService] filterByCategory('{}')", category);
+        return itemRepository.findByCategoryIgnoreCaseAndAvailableTrue(category);
+    }
+
+    public List<Item> filterByCondition(ItemCondition condition) {
+        if (debug) logger.debug("[ItemService] filterByCondition({})", condition);
+        return itemRepository.findByCondition(condition);
+    }
+
+    // -----------------------
+    // CREATE
+    // -----------------------
+    public Item addItem(Item item, String username) {
+        if (debug) logger.debug("[ItemService] addItem() invoked by '{}'", username);
+
+        String ownerId = getOwnerIdFromUsername(username);
+
+        // Assign owner
+        item.setOwnerId(ownerId);
+
+        // Ensure lists and defaults
+        if (item.getImageUrls() == null) item.setImageUrls(new ArrayList<>());
+        if (item.getTags() == null) item.setTags(new ArrayList<>());
+
+        if (item.getQuantity() <= 0) {
+            item.setQuantity(Math.max(item.getQuantity(), 1));
+        }
+
+        if (item.getPricePerDay() < 0) item.setPricePerDay(0.0);
+        if (item.getSecurityDeposit() < 0) item.setSecurityDeposit(0.0);
+        if (item.getDeliveryCharge() < 0) item.setDeliveryCharge(0.0);
+
+        // initialize stats
+        item.setViews(0);
+        item.setLikes(0);
+
+        validateAvailableDates(item.getAvailableFrom(), item.getAvailableUntil());
+
+        Item saved = itemRepository.save(item);
+
+        if (debug) logger.debug("[ItemService] Item added: {}", saved);
+        return saved;
+    }
+
+    // -----------------------
+    // UPDATE
+    // -----------------------
+    public Item updateItem(String itemId, Item updatedItem, String username) {
+        if (debug) logger.debug("[ItemService] updateItem({}, updatedItem, {})", itemId, username);
+
+        Item existing = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
+
+        String ownerId = getOwnerIdFromUsername(username);
+
+        if (!Objects.equals(existing.getOwnerId(), ownerId)) {
+            throw new RuntimeException("Unauthorized to update this item");
+        }
+
+        if (updatedItem.getName() != null) existing.setName(updatedItem.getName());
+        if (updatedItem.getDescription() != null) existing.setDescription(updatedItem.getDescription());
+        if (updatedItem.getCategory() != null) existing.setCategory(updatedItem.getCategory());
+        if (updatedItem.getCondition() != null) existing.setCondition(updatedItem.getCondition());
+
+        existing.setAvailable(updatedItem.isAvailable());
+        existing.setLatitude(updatedItem.getLatitude());
+        existing.setLongitude(updatedItem.getLongitude());
+
+        existing.setImageUrls(updatedItem.getImageUrls() != null ? updatedItem.getImageUrls() : new ArrayList<>());
+        existing.setTags(updatedItem.getTags() != null ? updatedItem.getTags() : new ArrayList<>());
+
+        if (updatedItem.getCity() != null) existing.setCity(updatedItem.getCity());
+        if (updatedItem.getState() != null) existing.setState(updatedItem.getState());
+        if (updatedItem.getCountry() != null) existing.setCountry(updatedItem.getCountry());
+        if (updatedItem.getStreet() != null) existing.setStreet(updatedItem.getStreet());
+        if (updatedItem.getPincode() != null) existing.setPincode(updatedItem.getPincode());
+
+        if (updatedItem.getPricePerDay() >= 0) existing.setPricePerDay(updatedItem.getPricePerDay());
+        if (updatedItem.getSecurityDeposit() >= 0) existing.setSecurityDeposit(updatedItem.getSecurityDeposit());
+        if (updatedItem.getDeliveryCharge() >= 0) existing.setDeliveryCharge(updatedItem.getDeliveryCharge());
+        if (updatedItem.getQuantity() > 0) existing.setQuantity(updatedItem.getQuantity());
+
+        if (updatedItem.getMinRentalDays() != 0) existing.setMinRentalDays(updatedItem.getMinRentalDays());
+        if (updatedItem.getMaxRentalDays() != 0) existing.setMaxRentalDays(updatedItem.getMaxRentalDays());
+
+        LocalDate af = updatedItem.getAvailableFrom();
+        LocalDate au = updatedItem.getAvailableUntil();
+        if (af != null || au != null) {
+            validateAvailableDates(af != null ? af : existing.getAvailableFrom(), au != null ? au : existing.getAvailableUntil());
+            existing.setAvailableFrom(af != null ? af : existing.getAvailableFrom());
+            existing.setAvailableUntil(au != null ? au : existing.getAvailableUntil());
+        }
+
+        if (updatedItem.getDeliveryOption() != null) existing.setDeliveryOption(updatedItem.getDeliveryOption());
+
+        Item saved = itemRepository.save(existing);
+
+        if (debug) logger.debug("[ItemService] Item updated: {} (by user {})", saved.getId(), username);
+        return saved;
+    }
+
+    // -----------------------
+    // DELETE
+    // -----------------------
     public void deleteItem(String itemId, String username) {
+        if (debug) logger.debug("[ItemService] deleteItem({}, {})", itemId, username);
 
         Item item = itemRepository.findById(itemId)
                 .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
 
-        String ownerId = userRepository.findByUsername(username)
-                .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        String ownerId = getOwnerIdFromUsername(username);
 
-        if (!item.getOwnerId().equals(ownerId)) {
+        if (!Objects.equals(item.getOwnerId(), ownerId)) {
             throw new RuntimeException("Unauthorized to delete this item");
         }
 
         itemRepository.delete(item);
+
+        if (debug) logger.debug("[ItemService] Item deleted: {} by {}", itemId, username);
     }
 
+    // -----------------------
+    // OWNER QUERIES
+    // -----------------------
     public List<Item> getMyItems(String username) {
-        String ownerId = userRepository.findByUsername(username)
-                .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
-
+        String ownerId = getOwnerIdFromUsername(username);
+        if (debug) logger.debug("[ItemService] getMyItems({}) -> ownerId={}", username, ownerId);
         return itemRepository.findByOwnerId(ownerId);
     }
 
     public List<Item> getMyAvailableItems(String username) {
-        String ownerId = userRepository.findByUsername(username)
-                .map(User::getId)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
-
+        String ownerId = getOwnerIdFromUsername(username);
+        if (debug) logger.debug("[ItemService] getMyAvailableItems({}) -> ownerId={}", username, ownerId);
         return itemRepository.findByOwnerIdAndAvailableTrue(ownerId);
     }
+
+    public Page<Item> getMyItems(String username, Pageable pageable) {
+        String ownerId = getOwnerIdFromUsername(username);
+        if (debug) logger.debug("[ItemService] getMyItems({}, pageable) ownerId={}", username, ownerId);
+        return itemRepository.findByOwnerId(ownerId, pageable);
+    }
+
+    // -----------------------
+    // STATS & HELPERS
+    // -----------------------
+    public void incrementViews(String itemId) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
+        item.setViews(item.getViews() + 1);
+        itemRepository.save(item);
+        if (debug) logger.debug("[ItemService] incrementViews({}) -> {}", itemId, item.getViews());
+    }
+
+    public void likeItem(String itemId) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
+        item.setLikes(item.getLikes() + 1);
+        itemRepository.save(item);
+        if (debug) logger.debug("[ItemService] likeItem({}) -> {}", itemId, item.getLikes());
+    }
+
+    public void unlikeItem(String itemId) {
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item not found: " + itemId));
+        item.setLikes(Math.max(0, item.getLikes() - 1));
+        itemRepository.save(item);
+        if (debug) logger.debug("[ItemService] unlikeItem({}) -> {}", itemId, item.getLikes());
+    }
+
+    public long countByOwnerId(String ownerId) {
+        if (debug) logger.debug("[ItemService] countByOwnerId({})", ownerId);
+        return itemRepository.countByOwnerId(ownerId);
+    }
+
+    public void deleteByOwnerId(String ownerId) {
+        if (debug) logger.debug("[ItemService] deleteByOwnerId({})", ownerId);
+        itemRepository.deleteByOwnerId(ownerId);
+    }
+
+    // -----------------------
+    // PRIVATE UTIL
+    // -----------------------
+    private String getOwnerIdFromUsername(String username) {
+        return userRepository.findByUsername(username)
+                .map(User::getId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+    }
+
+    private void validateAvailableDates(LocalDate from, LocalDate until) {
+        if (from != null && until != null && until.isBefore(from)) {
+            throw new IllegalArgumentException("availableUntil must be equal or after availableFrom");
+        }
+    }
+
 }
