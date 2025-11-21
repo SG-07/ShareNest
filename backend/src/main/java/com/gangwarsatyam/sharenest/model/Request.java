@@ -3,8 +3,9 @@ package com.gangwarsatyam.sharenest.model;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import java.util.List;
+
 import java.time.LocalDate;
+import java.util.List;
 
 @Document(collection = "requests")
 @Getter
@@ -17,49 +18,52 @@ public class Request {
     @Id
     private String id;
 
-    private String itemId;
-    private String borrowerId;
-    private String ownerId;
+    private String itemId;      // Item being requested
+    private String borrowerId;  // Who is requesting
+    private String ownerId;     // Owner of the item
 
-    /**
-     * Default: PENDING
-     * Other values: APPROVED, REJECTED, CANCELLED, COMPLETED
-     */
+    // --------------------------------------------------------
+    // STATUS
+    // --------------------------------------------------------
     @Builder.Default
     private RequestStatus status = RequestStatus.PENDING;
 
     @Builder.Default
     private long requestDate = System.currentTimeMillis();
 
-    // Rental dates (should NOT be Strings)
+    // --------------------------------------------------------
+    // RENTAL DETAILS (for owner to approve)
+    // --------------------------------------------------------
     private LocalDate startDate;
     private LocalDate endDate;
 
     private int days;
     private int quantity;
 
-    /**
-     * pickup | delivery
-     */
-    private String deliveryOption;
+    // --------------------------------------------------------
+    // DELIVERY OPTIONS
+    // --------------------------------------------------------
+    private String deliveryOption;   // pickup | delivery
+    private double deliveryFee;
 
-    /**
-     * online | cod
-     */
-    private String paymentMethod;
+    // --------------------------------------------------------
+    // PAYMENT INFORMATION
+    // --------------------------------------------------------
+    private String paymentMethod;     // online | cod
 
-    private double securityDeposit;
     private double pricePerDay;
-    private double subtotal;
+    private double securityDeposit;
 
+    private double subtotal;          // (pricePerDay * days * quantity)
     private double discount;
     private double tax;
     private double serviceFee;
-    private double deliveryFee;
 
-    private double totalPrice;
+    private double totalPrice;        // final payable amount
 
-    private String message;
-    private List<String> imageUrls;
+    // --------------------------------------------------------
+    // ADDITIONAL INFO
+    // --------------------------------------------------------
+    private String message;           // note from borrower
+    private List<String> imageUrls;   // screenshots if any
 }
-

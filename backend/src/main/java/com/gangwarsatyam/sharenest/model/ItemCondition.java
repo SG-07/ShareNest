@@ -18,7 +18,10 @@ public enum ItemCondition {
         try {
             return ItemCondition.valueOf(value.toUpperCase());
         } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid item condition: " + value);
+            throw new IllegalArgumentException(
+                    "Invalid item condition: " + value +
+                            ". Allowed values: NEW, USED, GOOD, FAIR, OLD, DAMAGED"
+            );
         }
     }
 
