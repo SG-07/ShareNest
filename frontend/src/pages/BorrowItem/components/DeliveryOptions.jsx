@@ -36,7 +36,7 @@ export default function DeliveryOptions({
         </label>
 
         {/* Both */}
-        <label className="flex items-center gap-2">
+        {/* <label className="flex items-center gap-2">
           <input
             type="radio"
             name="delivery"
@@ -45,7 +45,7 @@ export default function DeliveryOptions({
             onChange={() => setDeliveryOption("BOTH")}
           />
           <span>Either</span>
-        </label>
+        </label> */}
       </div>
     </div>
   );
