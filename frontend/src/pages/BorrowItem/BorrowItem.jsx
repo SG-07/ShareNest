@@ -9,10 +9,11 @@ import BorrowCalendar from "./components/BorrowCalendar";
 import BorrowQuantity from "./components/BorrowQuantity";
 import BorrowDeliveryOptions from "./components/DeliveryOptions";
 import BorrowPaymentOptions from "./components/PaymentOptions";
-import BorrowDiscount from "./components/BorrowDiscount";
-import BorrowFees from "./components/BorrowFees";
+// import BorrowDiscount from "./components/BorrowDiscount";
+// import BorrowFees from "./components/BorrowFees";
 import BorrowSummary from "./components/BorrowSummary";
 import BorrowSubmit from "./components/BorrowSubmit";
+
 import { getItem as getItemById } from "../../services/api";
 import Loading from "../../components/common/Loading";
 import Error from "../../components/common/Error";
@@ -27,16 +28,27 @@ export default function BorrowItem() {
   const [quantity, setQuantity] = useState(1);
   const [deliveryOption, setDeliveryOption] = useState("pickup");
   const [paymentMethod, setPaymentMethod] = useState("online");
-  const [discountCode, setDiscountCode] = useState("");
-  const [appliedDiscount, setAppliedDiscount] = useState(0);
-  const [extraFees, setExtraFees] = useState({ tax: 0, serviceFee: 0 });
+
+  // NEW — Address object for home delivery
+  const [address, setAddress] = useState({
+    street: "",
+    city: "",
+    state: "",
+    country: "",
+    pincode: "",
+  });
+
+  // NEW — Message to owner
+  const [userMessage, setUserMessage] = useState("");
+
+  // COMMENTED OUT – discount, tax, service fee
+  // const [discountCode, setDiscountCode] = useState("");
+  // const [appliedDiscount, setAppliedDiscount] = useState(0);
+  // const [extraFees, setExtraFees] = useState({ tax: 0, serviceFee: 0 });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // --------------------------
-  // Load item data
-  // --------------------------
   useEffect(() => {
     async function loadData() {
       try {
@@ -50,11 +62,11 @@ export default function BorrowItem() {
         const res = await getItemById(itemId);
         setItem(res.data);
 
-        // Set service fees defaults
-        setExtraFees({
-          tax: 0.05,           // 5% GST
-          serviceFee: 0       // Flat fee
-        });
+        // COMMENTED OUT – fees logic
+        // setExtraFees({
+        //   tax: 0.05,
+        //   serviceFee: 0
+        // });
 
       } catch (err) {
         setError("Failed to load item.");
@@ -73,72 +85,60 @@ export default function BorrowItem() {
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6 pb-16">
 
-      {/* Item hero header (image gallery + title + rating) */}
       <BorrowHeader item={item} />
-
-      {/* Address, distance, category, condition, owner profile */}
       <BorrowDetails item={item} />
 
-      {/* Calendar (select borrow range) */}
       <BorrowCalendar
         item={item}
         dates={dates}
         setDates={setDates}
       />
 
-      {/* Quantity selection (if item supports quantity) */}
       <BorrowQuantity
         item={item}
         quantity={quantity}
         setQuantity={setQuantity}
       />
 
-      {/* Delivery / pickup options */}
       <BorrowDeliveryOptions
         deliveryOption={deliveryOption}
         setDeliveryOption={setDeliveryOption}
+        address={address}
+        setAddress={setAddress}
       />
 
-      {/* Payment selection */}
       <BorrowPaymentOptions
         paymentMethod={paymentMethod}
         setPaymentMethod={setPaymentMethod}
       />
 
-      {/* Discount coupon input */}
-      <BorrowDiscount
-        discountCode={discountCode}
-        setDiscountCode={setDiscountCode}
-        appliedDiscount={appliedDiscount}
-        setAppliedDiscount={setAppliedDiscount}
-      />
+      {/* Message to owner */}
+      <div className="bg-white p-4 rounded-lg shadow">
+        <h2 className="text-lg font-semibold mb-2">Message to Owner (optional)</h2>
+        <textarea
+          className="w-full border rounded p-2"
+          rows="3"
+          placeholder="Any special instructions?"
+          value={userMessage}
+          onChange={(e) => setUserMessage(e.target.value)}
+        ></textarea>
+      </div>
 
-      {/* Fees (tax, service fee, security deposit) */}
-      <BorrowFees
-        item={item}
-        extraFees={extraFees}
-        setExtraFees={setExtraFees}
-      />
-
-      {/* Final calculated price breakdown */}
       <BorrowSummary
         item={item}
         dates={dates}
         quantity={quantity}
         deliveryOption={deliveryOption}
-        extraFees={extraFees}
-        appliedDiscount={appliedDiscount}
       />
 
-      {/* Submit request */}
       <BorrowSubmit
         item={item}
         dates={dates}
         quantity={quantity}
         deliveryOption={deliveryOption}
         paymentMethod={paymentMethod}
-        appliedDiscount={appliedDiscount}
-        extraFees={extraFees}
+        address={address}
+        userMessage={userMessage}
       />
     </div>
   );
