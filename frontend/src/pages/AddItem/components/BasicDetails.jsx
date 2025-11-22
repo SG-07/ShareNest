@@ -43,12 +43,15 @@ export default function BasicDetails({ form, setField }) {
         <label className="block font-medium mb-1">Condition</label>
         <select
           value={form.condition}
-          onChange={(e) => setField("condition", e.target.value)}
+          onChange={(e) => setField("condition", e.target.value)}    
           className="w-full border p-2 rounded"
         >
           <option value="GOOD">Good</option>
-          <option value="AVERAGE">Average</option>
-          <option value="EXCELLENT">Excellent</option>
+          <option value="USED">Used</option>
+          <option value="NEW">New</option>
+          <option value="FAIR">Fair</option>
+          <option value="OLD">Old</option>
+          <option value="DAMAGED">Damaged</option>
         </select>
       </div>
 
