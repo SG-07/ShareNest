@@ -9,12 +9,11 @@ import BorrowCalendar from "./components/BorrowCalendar";
 import BorrowQuantity from "./components/BorrowQuantity";
 import BorrowDeliveryOptions from "./components/DeliveryOptions";
 import BorrowPaymentOptions from "./components/PaymentOptions";
-// import BorrowDiscount from "./components/BorrowDiscount";
-// import BorrowFees from "./components/BorrowFees";
 import BorrowSummary from "./components/BorrowSummary";
 import BorrowSubmit from "./components/BorrowSubmit";
 
 import { getItem as getItemById } from "../../services/api";
+
 import Loading from "../../components/common/Loading";
 import Error from "../../components/common/Error";
 import { toast } from "react-toastify";
@@ -24,12 +23,24 @@ export default function BorrowItem() {
   const navigate = useNavigate();
 
   const [item, setItem] = useState(null);
-  const [dates, setDates] = useState(null);
-  const [quantity, setQuantity] = useState(1);
-  const [deliveryOption, setDeliveryOption] = useState("pickup");
-  const [paymentMethod, setPaymentMethod] = useState("online");
 
-  // NEW — Address object for home delivery
+  // Calendar selected dates
+  const [dates, setDates] = useState({
+    startDate: "",
+    endDate: "",
+  });
+
+  const [quantity, setQuantity] = useState(1);
+
+  // backend expects:
+  // HOME_DELIVERY or PICKUP
+  const [deliveryOption, setDeliveryOption] = useState("PICKUP");
+
+  // backend expects:
+  // ONLINE or CASH
+  const [paymentMethod, setPaymentMethod] = useState("ONLINE");
+
+  // Address only required for HOME_DELIVERY
   const [address, setAddress] = useState({
     street: "",
     city: "",
@@ -38,13 +49,11 @@ export default function BorrowItem() {
     pincode: "",
   });
 
-  // NEW — Message to owner
+  // Optional message to owner
   const [userMessage, setUserMessage] = useState("");
 
-  // COMMENTED OUT – discount, tax, service fee
-  // const [discountCode, setDiscountCode] = useState("");
-  // const [appliedDiscount, setAppliedDiscount] = useState(0);
-  // const [extraFees, setExtraFees] = useState({ tax: 0, serviceFee: 0 });
+  // Terms (backend requires acceptTerms: true)
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -61,13 +70,6 @@ export default function BorrowItem() {
 
         const res = await getItemById(itemId);
         setItem(res.data);
-
-        // COMMENTED OUT – fees logic
-        // setExtraFees({
-        //   tax: 0.05,
-        //   serviceFee: 0
-        // });
-
       } catch (err) {
         setError("Failed to load item.");
       } finally {
@@ -85,21 +87,25 @@ export default function BorrowItem() {
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6 pb-16">
 
+      {/* Item Info */}
       <BorrowHeader item={item} />
       <BorrowDetails item={item} />
 
+      {/* Calendar */}
       <BorrowCalendar
         item={item}
         dates={dates}
         setDates={setDates}
       />
 
+      {/* Quantity */}
       <BorrowQuantity
         item={item}
         quantity={quantity}
         setQuantity={setQuantity}
       />
 
+      {/* Delivery Options */}
       <BorrowDeliveryOptions
         deliveryOption={deliveryOption}
         setDeliveryOption={setDeliveryOption}
@@ -107,12 +113,13 @@ export default function BorrowItem() {
         setAddress={setAddress}
       />
 
+      {/* Payment Options */}
       <BorrowPaymentOptions
         paymentMethod={paymentMethod}
         setPaymentMethod={setPaymentMethod}
       />
 
-      {/* Message to owner */}
+      {/* Message */}
       <div className="bg-white p-4 rounded-lg shadow">
         <h2 className="text-lg font-semibold mb-2">Message to Owner (optional)</h2>
         <textarea
@@ -124,6 +131,7 @@ export default function BorrowItem() {
         ></textarea>
       </div>
 
+      {/* Summary */}
       <BorrowSummary
         item={item}
         dates={dates}
@@ -131,6 +139,7 @@ export default function BorrowItem() {
         deliveryOption={deliveryOption}
       />
 
+      {/* Submit request */}
       <BorrowSubmit
         item={item}
         dates={dates}
@@ -139,6 +148,8 @@ export default function BorrowItem() {
         paymentMethod={paymentMethod}
         address={address}
         userMessage={userMessage}
+        acceptTerms={acceptTerms}
+        setAcceptTerms={setAcceptTerms}
       />
     </div>
   );

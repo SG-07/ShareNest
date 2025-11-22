@@ -49,7 +49,7 @@ export default function AddItem() {
   const [error, setError] = useState(null);
 
   const setField = (name, value) => {
-    devLog("📝 Field Update", `${name} → ${value}`, value);
+    // devLog("📝 Field Update", `${name} → ${value}`, value);
 
     // Extra debug logs
     if (name === "tags") devLog("🏷 Tags Updated", value);
