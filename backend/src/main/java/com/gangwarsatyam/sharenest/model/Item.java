@@ -1,8 +1,11 @@
 package com.gangwarsatyam.sharenest.model;
 
-import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -79,13 +82,20 @@ public class Item {
     private int quantity;
 
     private LocalDate availableFrom;
-    private LocalDate availableUntil;
 
     private int minRentalDays;
     private int maxRentalDays;
 
     // PICKUP | DELIVERY | BOTH
     private String deliveryOption;
+
+
+    // ---------------------------------------------------------
+    // UNAVAILABLE DATE RANGES
+    // ---------------------------------------------------------
+
+    @Builder.Default
+    private List<UnavailableDateRange> notAvailable = new ArrayList<>();
 
 
     // ---------------------------------------------------------
@@ -119,5 +129,9 @@ public class Item {
 
     public void setTags(List<String> tags) {
         this.tags = (tags != null) ? tags : new ArrayList<>();
+    }
+
+    public void setNotAvailable(List<UnavailableDateRange> notAvailable) {
+        this.notAvailable = (notAvailable != null) ? notAvailable : new ArrayList<>();
     }
 }

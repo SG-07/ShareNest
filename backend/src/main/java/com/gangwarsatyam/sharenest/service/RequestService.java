@@ -4,6 +4,7 @@ import com.gangwarsatyam.sharenest.dto.RequestDto;
 import com.gangwarsatyam.sharenest.model.Item;
 import com.gangwarsatyam.sharenest.model.Request;
 import com.gangwarsatyam.sharenest.model.RequestStatus;
+import com.gangwarsatyam.sharenest.model.UnavailableDateRange;
 import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.repository.ItemRepository;
 import com.gangwarsatyam.sharenest.repository.RequestRepository;
@@ -16,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -32,9 +34,9 @@ public class RequestService {
     private final UserRepository userRepo;
     private final TrustScoreService trustScoreService;
 
-    // ---------------------------
+    // -------------------------------------------------------------------------
     // SUBMIT REQUEST
-    // ---------------------------
+    // -------------------------------------------------------------------------
     public Request submitRequest(RequestDto dto, String borrowerId) {
 
         debug("Submitting request: itemId={}, borrower={}", dto.getItemId(), borrowerId);
@@ -49,13 +51,17 @@ public class RequestService {
         User borrower = userRepo.findById(borrowerId)
                 .orElseThrow(() -> new RuntimeException("Borrower not found: " + borrowerId));
 
-        // Validate rental dates
+        // --- validate rental dates ---
         LocalDate startDate = parseSafe(dto.getStartDate());
         LocalDate endDate = parseSafe(dto.getEndDate());
 
         debug("Parsed dates: start={}, end={}", startDate, endDate);
 
-        // Build request object
+        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+            throw new RuntimeException("End date cannot be before start date.");
+        }
+
+        // Build request
         Request req = Request.builder()
                 .itemId(item.getId())
                 .borrowerId(borrowerId)
@@ -67,14 +73,6 @@ public class RequestService {
                 .quantity(dto.getQuantity())
                 .deliveryOption(dto.getDeliveryOption())
                 .paymentMethod(dto.getPaymentMethod())
-                .securityDeposit(dto.getSecurityDeposit())
-                .pricePerDay(dto.getPricePerDay())
-                .subtotal(dto.getSubtotal())
-                .discount(dto.getDiscount())
-                .tax(dto.getTax())
-                .serviceFee(dto.getServiceFee())
-                .deliveryFee(dto.getDeliveryFee())
-                .totalPrice(dto.getTotalPrice())
                 .message(dto.getMessage())
                 .imageUrls(dto.getImageUrls())
                 .build();
@@ -85,10 +83,9 @@ public class RequestService {
         return saved;
     }
 
-
-    // ---------------------------
+    // -------------------------------------------------------------------------
     // VIEW REQUESTS
-    // ---------------------------
+    // -------------------------------------------------------------------------
     public List<Request> getRequestsByBorrower(String borrowerId) {
         debug("Fetching requests by borrower {}", borrowerId);
         return requestRepo.findByBorrowerId(borrowerId);
@@ -99,10 +96,9 @@ public class RequestService {
         return requestRepo.findByOwnerId(ownerId);
     }
 
-
-    // ---------------------------
+    // -------------------------------------------------------------------------
     // CANCEL REQUEST
-    // ---------------------------
+    // -------------------------------------------------------------------------
     public void cancelRequest(String requestId, String borrowerId) {
 
         Request req = requestRepo.findById(requestId)
@@ -124,10 +120,9 @@ public class RequestService {
         updateTrustSafe(req);
     }
 
-
-    // ---------------------------
-    // ACCEPT REQUEST
-    // ---------------------------
+    // -------------------------------------------------------------------------
+    // ACCEPT REQUEST (this is where unavailableDateRanges is updated)
+    // -------------------------------------------------------------------------
     public void acceptRequest(String requestId, String ownerId) {
 
         Request req = requestRepo.findById(requestId)
@@ -144,22 +139,33 @@ public class RequestService {
         req.setStatus(RequestStatus.ACCEPTED);
         requestRepo.save(req);
 
-        // Mark item as not available
+        // ===== UPDATE BOOKED DATE RANGES IN ITEM =====
         Item item = itemRepo.findById(req.getItemId())
                 .orElseThrow(() -> new RuntimeException("Item not found: " + req.getItemId()));
 
-        item.setAvailable(false);
+        List<UnavailableDateRange> ranges = item.getNotAvailable();
+        if (ranges == null) ranges = new ArrayList<>();
+
+        ranges.add(new UnavailableDateRange(
+                req.getStartDate(),
+                req.getEndDate()
+        ));
+
+        item.setNotAvailable(ranges);
+
+        // Item stays available unless quantity-based handling
+        item.setAvailable(true);
+
         itemRepo.save(item);
 
-        log.info("Request {} accepted by owner {}", requestId, ownerId);
+        log.info("Request {} accepted by owner {} and dates added to item", requestId, ownerId);
 
         updateTrustSafe(req);
     }
 
-
-    // ---------------------------
-    // REJECT REQUEST
-    // ---------------------------
+    // -------------------------------------------------------------------------
+    // DECLINE REQUEST
+    // -------------------------------------------------------------------------
     public void declineRequest(String requestId, String ownerId) {
 
         Request req = requestRepo.findById(requestId)
@@ -181,11 +187,9 @@ public class RequestService {
         updateTrustSafe(req);
     }
 
-
-    // -------------------------------------------------------
-    // UTIL
-    // -------------------------------------------------------
-
+    // -------------------------------------------------------------------------
+    // UTILS
+    // -------------------------------------------------------------------------
     private LocalDate parseSafe(String dateStr) {
         try {
             return dateStr != null ? LocalDate.parse(dateStr) : null;
