@@ -1,7 +1,5 @@
 // src/pages/BorrowItem/components/DeliveryOptions.jsx
 
-import React from "react";
-
 export default function BorrowDeliveryOptions({
   deliveryOption,
   setDeliveryOption,
