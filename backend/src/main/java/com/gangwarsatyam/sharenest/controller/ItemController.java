@@ -48,13 +48,13 @@ public class ItemController {
 
         if (debug) logger.debug("[ItemController] addItem() called by '{}' with dto: {}", username, dto);
 
-        Item item = mapDtoToItem(dto);   // owner NOT set here
+        Item item = mapDtoToItem(dto);
 
         if (debug) logger.debug("[ItemController] Mapped DTO -> Item (before save): {}", safeToString(item));
 
         Item saved;
         try {
-            saved = itemService.addItem(item, username);  // owner set inside service
+            saved = itemService.addItem(item, username);
         } catch (RuntimeException ex) {
             logger.error("[ItemController] addItem() failed for user='{}', item='{}'. Error: {}",
                     username, item.getName(), ex.getMessage(), ex);
@@ -114,7 +114,7 @@ public class ItemController {
 
         if (debug) logger.debug("[ItemController] updateItem() called for id={} by '{}', dto={}", id, username, dto);
 
-        Item updatedItem = mapDtoToItem(dto);  // owner NOT set here
+        Item updatedItem = mapDtoToItem(dto);
 
         if (debug) logger.debug("[ItemController] Mapped DTO -> Item (update): {}", safeToString(updatedItem));
 
@@ -192,9 +192,8 @@ public class ItemController {
     }
 
     // ----------------------------------------------------
-    // Item Request
+    // ITEM REQUEST
     // ----------------------------------------------------
-
     @PostMapping("/{itemId}/request")
     public ResponseEntity<Request> requestItem(
             @PathVariable String itemId,
@@ -205,7 +204,6 @@ public class ItemController {
         Request req = itemService.requestItem(itemId, dto, username);
         return ResponseEntity.ok(req);
     }
-
 
     // ----------------------------------------------------
     // DTO → ENTITY MAPPER  (ownerId removed)
@@ -237,8 +235,7 @@ public class ItemController {
 
         item.setQuantity(dto.getQuantity() != null ? dto.getQuantity() : 0);
 
-        item.setAvailableFrom(dto.getAvailableFrom());
-        item.setAvailableUntil(dto.getAvailableUntil());
+        // 🔥 Removed availableFrom & availableUntil — as requested
 
         item.setMinRentalDays(dto.getMinRentalDays() != null ? dto.getMinRentalDays() : 0);
         item.setMaxRentalDays(dto.getMaxRentalDays() != null ? dto.getMaxRentalDays() : 0);
@@ -249,7 +246,7 @@ public class ItemController {
     }
 
     // ----------------------------------------------------
-    // Extract username from auth
+    // Extract username
     // ----------------------------------------------------
     private String extractUsername(Authentication auth) {
         if (auth == null) {

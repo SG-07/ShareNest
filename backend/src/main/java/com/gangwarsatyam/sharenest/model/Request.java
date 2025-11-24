@@ -18,9 +18,9 @@ public class Request {
     @Id
     private String id;
 
-    private String itemId;      // Item being requested
-    private String borrowerId;  // Who is requesting
-    private String ownerId;     // Owner of the item
+    private String itemId;
+    private String borrowerId;
+    private String ownerId;
 
     // --------------------------------------------------------
     // STATUS
@@ -43,27 +43,27 @@ public class Request {
     // --------------------------------------------------------
     // DELIVERY OPTIONS
     // --------------------------------------------------------
-    private String deliveryOption;   // pickup | delivery
+    private String deliveryOption;
     private double deliveryFee;
 
     // --------------------------------------------------------
     // PAYMENT INFORMATION
     // --------------------------------------------------------
-    private String paymentMethod;     // online | cod
+    private String paymentMethod;
 
     private double pricePerDay;
     private double securityDeposit;
 
-    private double subtotal;          // (pricePerDay * days * quantity)
+    private double subtotal;
     private double discount;
     private double tax;
     private double serviceFee;
 
-    private double totalPrice;        // final payable amount
+    private double totalPrice;
 
     // --------------------------------------------------------
     // ADDITIONAL INFO
     // --------------------------------------------------------
-    private String message;           // note from borrower
-    private List<String> imageUrls;   // screenshots if any
+    private String message;
+    private List<String> imageUrls;
 }

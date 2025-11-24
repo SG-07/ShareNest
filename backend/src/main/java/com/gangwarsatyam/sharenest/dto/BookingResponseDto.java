@@ -4,7 +4,7 @@ import com.gangwarsatyam.sharenest.model.BookingStatus;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.Map;
 
 @Data
@@ -13,8 +13,8 @@ public class BookingResponseDto {
     private String id;
     private String itemId;
     private String renterId;
-    private LocalDateTime startDate;
-    private LocalDateTime endDate;
+    private LocalDate startDate;
+    private LocalDate endDate;
     private BookingStatus status;
     private Map<String, Object> details;
 }

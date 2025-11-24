@@ -8,15 +8,24 @@ import java.util.List;
 
 public interface RequestRepository extends MongoRepository<Request, String> {
 
-    // Borrower perspective (requests the user SENT)
+    // ------------------------------
+    // Borrower perspective (requests SENT by user)
+    // ------------------------------
     List<Request> findByBorrowerId(String borrowerId);
 
-    // Owner perspective (requests the user RECEIVED)
+    // ------------------------------
+    // Owner perspective (requests RECEIVED by user)
+    // ------------------------------
     List<Request> findByOwnerId(String ownerId);
 
-    // For validating overlapping bookings (active + accepted)
+    // ------------------------------
+    // Validate overlapping bookings:
+    // checks ACTIVE + ACCEPTED + PROGRESS statuses for that item
+    // ------------------------------
     List<Request> findByItemIdAndStatusIn(String itemId, List<RequestStatus> statuses);
 
-    // Optional: get all requests for a given item
+    // ------------------------------
+    // Optional: All requests for an item
+    // ------------------------------
     List<Request> findByItemId(String itemId);
 }

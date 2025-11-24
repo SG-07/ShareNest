@@ -1,33 +1,50 @@
 package com.gangwarsatyam.sharenest.dto;
 
 import com.gangwarsatyam.sharenest.model.Item;
-import com.gangwarsatyam.sharenest.model.ItemCondition;
-import lombok.*;
-import java.time.LocalDate;
+import com.gangwarsatyam.sharenest.model.UnavailableDateRange;
+import lombok.Data;
+
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
-@ToString
+@Data
 public class ItemResponse {
 
     private String id;
+
     private String name;
     private String description;
+    private String ownerId;
     private String category;
-    private ItemCondition condition;
+
+    private boolean available;
+    private boolean deleted;
 
     private List<String> imageUrls;
-    private boolean available;
+    private List<String> tags;
+
     private double latitude;
     private double longitude;
 
-    private String ownerId;
-    private List<String> tags;
+    private String city;
+    private String state;
+    private String country;
+    private String street;
+    private String pincode;
+
+    private double pricePerDay;
+    private double securityDeposit;
+    private double deliveryCharge;
+
+    private int quantity;
+
+    private LocalDate availableFrom;
+
+    private int minRentalDays;
+    private int maxRentalDays;
+
+    private String deliveryOption;
 
     private int views;
     private int likes;
@@ -35,65 +52,62 @@ public class ItemResponse {
     private Instant createdAt;
     private Instant updatedAt;
 
-    // ---- NEW FIELDS (LOCATION) ----
-    private String city;
-    private String state;
-    private String country;
-    private String street;
-    private String pincode;
+    // Updated field name
+    private List<UnavailableDateRange> unavailableDateRanges;
 
-    // ---- NEW FIELDS (RENTAL INFO) ----
-    private Double pricePerDay;
-    private Double securityDeposit;
-    private Double deliveryCharge;
 
-    private Integer quantity;
+    // ==========================================================
+    // MAPPER: Convert Item → ItemResponse
+    // ==========================================================
+    public static ItemResponse fromItem(Item item) {
+        ItemResponse dto = new ItemResponse();
 
-    private LocalDate availableFrom;
-    private LocalDate availableUntil;
+        dto.setId(item.getId());
+        dto.setName(item.getName());
+        dto.setDescription(item.getDescription());
+        dto.setOwnerId(item.getOwnerId());
+        dto.setCategory(item.getCategory());
 
-    private Integer minRentalDays;
-    private Integer maxRentalDays;
+        dto.setAvailable(item.isAvailable());
+        dto.setDeleted(item.isDeleted());
 
-    private String deliveryOption;
+        dto.setImageUrls(item.getImageUrls());
+        dto.setTags(item.getTags());
+
+        dto.setLatitude(item.getLatitude());
+        dto.setLongitude(item.getLongitude());
+
+        dto.setCity(item.getCity());
+        dto.setState(item.getState());
+        dto.setCountry(item.getCountry());
+        dto.setStreet(item.getStreet());
+        dto.setPincode(item.getPincode());
+
+        dto.setPricePerDay(item.getPricePerDay());
+        dto.setSecurityDeposit(item.getSecurityDeposit());
+        dto.setDeliveryCharge(item.getDeliveryCharge());
+
+        dto.setQuantity(item.getQuantity());
+
+        dto.setAvailableFrom(item.getAvailableFrom());
+
+        dto.setMinRentalDays(item.getMinRentalDays());
+        dto.setMaxRentalDays(item.getMaxRentalDays());
+
+        dto.setDeliveryOption(item.getDeliveryOption());
+
+        dto.setViews(item.getViews());
+        dto.setLikes(item.getLikes());
+
+        dto.setCreatedAt(item.getCreatedAt());
+        dto.setUpdatedAt(item.getUpdatedAt());
+
+        dto.setUnavailableDateRanges(item.getNotAvailable());
+
+        return dto;
+    }
 
     public static ItemResponse fromEntity(Item item) {
-        return ItemResponse.builder()
-                .id(item.getId())
-                .name(item.getName())
-                .description(item.getDescription())
-                .category(item.getCategory())
-                .condition(item.getCondition())
-                .imageUrls(item.getImageUrls())
-                .available(item.isAvailable())
-                .latitude(item.getLatitude())
-                .longitude(item.getLongitude())
-                .ownerId(item.getOwnerId())
-                .tags(item.getTags())
-                .views(item.getViews())
-                .likes(item.getLikes())
-                .createdAt(item.getCreatedAt())
-                .updatedAt(item.getUpdatedAt())
-
-                // LOCATION
-                .city(item.getCity())
-                .state(item.getState())
-                .country(item.getCountry())
-                .street(item.getStreet())
-                .pincode(item.getPincode())
-
-                // RENTAL INFO
-                .pricePerDay(item.getPricePerDay())
-                .securityDeposit(item.getSecurityDeposit())
-                .deliveryCharge(item.getDeliveryCharge())
-                .quantity(item.getQuantity())
-                .availableFrom(item.getAvailableFrom())
-                .availableUntil(item.getAvailableUntil())
-                .minRentalDays(item.getMinRentalDays())
-                .maxRentalDays(item.getMaxRentalDays())
-
-                .deliveryOption(item.getDeliveryOption())
-
-                .build();
+        return fromItem(item);
     }
 }
