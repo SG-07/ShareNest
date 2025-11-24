@@ -109,7 +109,7 @@ export const uploadImage = async (file) => {
   const res = await axios.post(url, data);
   devLog("API", "Image uploaded", res.data.secure_url);
 
-  return res.data.secure_url; // ✅ hosted image URL
+  return res.data.secure_url; 
 };
 
 /* -------------------------
@@ -117,6 +117,10 @@ export const uploadImage = async (file) => {
    ------------------------- */
 export const getItems = () => api.get("/items");
 export const getItem = (id) => api.get(`/items/${id}`);
+export const updateItem = (id, payload) =>
+  api.put(`/items/${id}`, payload, {
+    headers: { "Content-Type": "application/json" },
+  });
 export const createItem = (payload) =>
   api.post("/items", payload, {
     headers: { "Content-Type": "application/json" },

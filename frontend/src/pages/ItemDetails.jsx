@@ -68,6 +68,12 @@ export default function ItemDetails() {
     navigate(`/borrow/${id}`);
   };
 
+  // Navigate to Update Page
+  const goToUpdatePage = () => {
+    devLog("➡️ Navigating to update page:", `/update/${id}`);
+    navigate(`/update/${id}`);
+  };
+
   // UI STATES
   if (loading) return <Loading message="Loading item…" />;
   if (error) return <ErrorBanner message={error} />;
@@ -130,7 +136,7 @@ export default function ItemDetails() {
               {/* Owner vs Borrower Button */}
               {isOwner ? (
                 <button
-                  onClick={() => navigate(`/edit-item/${id}`)}
+                  onClick={goToUpdatePage}
                   className="ml-auto btn-primary"
                 >
                   Update Item

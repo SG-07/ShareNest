@@ -8,6 +8,8 @@ import NotFound from "../pages/NotFound";
 import Login from "../pages/Login";
 import Signup from "../pages/Signup";
 import BorrowItem from "../pages/BorrowItem/BorrowItem";
+import ProtectedRoute from "./ProtectedRoute";
+import UpdateItem from "../pages/UpdateItem/UpdateItem";
 
 // lazy placeholders for pages you can implement next
 const MyRequests = () => (
@@ -23,8 +25,6 @@ const About = () => (
   <div className="max-w-7xl mx-auto p-6">About ShareNest</div>
 );
 
-// Protected wrapper (imported below if needed)
-import ProtectedRoute from "./ProtectedRoute";
 
 export default {
   Home,
@@ -38,6 +38,7 @@ export default {
   NotFound,
   BorrowItem,
   About,
+  UpdateItem,
   // helper wrapper component for protected routes
   Protected: ({ children }) => <ProtectedRoute>{children}</ProtectedRoute>,
 };
