@@ -7,12 +7,12 @@ import BorrowHeader from "./components/BorrowHeader";
 import BorrowDetails from "./components/BorrowDetails";
 import BorrowCalendar from "./components/BorrowCalendar";
 import BorrowQuantity from "./components/BorrowQuantity";
-import BorrowDeliveryOptions from "./components/DeliveryOptions";
+import DeliveryOptions from "./components/DeliveryOptions";
 import BorrowPaymentOptions from "./components/PaymentOptions";
 import BorrowSummary from "./components/BorrowSummary";
 import BorrowSubmit from "./components/BorrowSubmit";
 
-import MapPreview from "./components/MapPreview";   // ⭐ ADDED
+import MapPreview from "./components/MapPreview";
 
 import { getItem as getItemById } from "../../services/api";
 
@@ -82,7 +82,6 @@ export default function BorrowItem() {
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6 pb-16">
-
       {/* Item Info */}
       <BorrowHeader item={item} />
       <BorrowDetails item={item} />
@@ -98,14 +97,16 @@ export default function BorrowItem() {
       />
 
       {/* Delivery Options */}
-      <BorrowDeliveryOptions
+      <DeliveryOptions
         deliveryOption={deliveryOption}
         setDeliveryOption={setDeliveryOption}
+        deliveryCharge={item.deliveryCharge}
+        ownerDeliveryOption={item.deliveryOption}
         address={address}
         setAddress={setAddress}
       />
 
-      {/* ⭐ Map Preview (just below delivery option) */}
+      {/* Map Preview */}
       <MapPreview
         latitude={item.latitude}
         longitude={item.longitude}
@@ -120,7 +121,9 @@ export default function BorrowItem() {
 
       {/* Message */}
       <div className="bg-white p-4 rounded-lg shadow">
-        <h2 className="text-lg font-semibold mb-2">Message to Owner (optional)</h2>
+        <h2 className="text-lg font-semibold mb-2">
+          Message to Owner (optional)
+        </h2>
         <textarea
           className="w-full border rounded p-2"
           rows="3"
@@ -153,4 +156,3 @@ export default function BorrowItem() {
     </div>
   );
 }
-

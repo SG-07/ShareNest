@@ -20,11 +20,11 @@ export default function PaymentOptions({ paymentMethod, setPaymentMethod }) {
             onChange={() => {}}
           />
           <span>
-            Online Payment (UPI / Card) — <span className="text-sm text-gray-500">Coming Soon</span>
+            Online Payment (UPI / Card) — <span className="text-sm text-blue-500">Coming Soon</span>
           </span>
         </label>
 
-        {/* Cash on Pickup */}
+        {/* Cash on Pickup / Delivery */}
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="radio"
@@ -33,7 +33,7 @@ export default function PaymentOptions({ paymentMethod, setPaymentMethod }) {
             checked={paymentMethod === "cash"}
             onChange={() => setPaymentMethod("cash")}
           />
-          <span>Cash on Pickup</span>
+          <span>Cash on Pickup / Delivery</span>
         </label>
 
       </div>
