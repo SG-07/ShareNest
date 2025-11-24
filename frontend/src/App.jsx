@@ -21,6 +21,9 @@ export default function App() {
         {/* Borrow Page */}
         <Route path="borrow/:itemId" element={<AppRoutes.BorrowItem />} />
 
+        {/* Update Page */}
+        <Route path="update/:itemId" element={<AppRoutes.UpdateItem />} />
+
         {/* Map */}
         <Route path="map" element={<AppRoutes.MapView />} />
 
