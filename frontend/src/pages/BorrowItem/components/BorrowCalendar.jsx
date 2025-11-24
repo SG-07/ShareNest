@@ -3,13 +3,28 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
 export default function BorrowCalendar({ item, dates, setDates }) {
-  const unavailable = item.unavailableDates || [];
+  const unavailableRanges = item.unavailableDates || [];
+
+  // Convert ranges into individual disabled days
+  const disabledDates = [];
+  unavailableRanges.forEach(([start, end]) => {
+    let current = new Date(start);
+    const last = new Date(end);
+
+    while (current <= last) {
+      disabledDates.push(new Date(current).toDateString());
+      current.setDate(current.getDate() + 1);
+    }
+  });
 
   const disableDates = ({ date }) =>
-    unavailable.some(
-      (blocked) =>
-        new Date(blocked).toDateString() === date.toDateString()
-    );
+    disabledDates.includes(date.toDateString());
+
+  // Check array vs single date
+  const startDate =
+    Array.isArray(dates) && dates[0] ? dates[0] : null;
+  const endDate =
+    Array.isArray(dates) && dates[1] ? dates[1] : null;
 
   return (
     <div className="bg-white p-4 rounded-lg shadow">
@@ -22,14 +37,17 @@ export default function BorrowCalendar({ item, dates, setDates }) {
         tileDisabled={disableDates}
       />
 
-      {dates && (
+      {startDate && (
         <div className="mt-3 text-sm">
           <p>
-            <strong>Start:</strong> {dates[0].toDateString()}
+            <strong>Start:</strong> {startDate.toDateString()}
           </p>
-          <p>
-            <strong>End:</strong> {dates[1].toDateString()}
-          </p>
+
+          {endDate && (
+            <p>
+              <strong>End:</strong> {endDate.toDateString()}
+            </p>
+          )}
         </div>
       )}
     </div>
