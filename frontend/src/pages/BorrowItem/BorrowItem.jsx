@@ -12,6 +12,8 @@ import BorrowPaymentOptions from "./components/PaymentOptions";
 import BorrowSummary from "./components/BorrowSummary";
 import BorrowSubmit from "./components/BorrowSubmit";
 
+import MapPreview from "./components/MapPreview";   // ⭐ ADDED
+
 import { getItem as getItemById } from "../../services/api";
 
 import Loading from "../../components/common/Loading";
@@ -32,15 +34,11 @@ export default function BorrowItem() {
 
   const [quantity, setQuantity] = useState(1);
 
-  // backend expects:
-  // HOME_DELIVERY or PICKUP
   const [deliveryOption, setDeliveryOption] = useState("PICKUP");
 
-  // backend expects:
-  // ONLINE or CASH
   const [paymentMethod, setPaymentMethod] = useState("ONLINE");
 
-  // Address only required for HOME_DELIVERY
+  // address required only for HOME_DELIVERY
   const [address, setAddress] = useState({
     street: "",
     city: "",
@@ -49,10 +47,8 @@ export default function BorrowItem() {
     pincode: "",
   });
 
-  // Optional message to owner
   const [userMessage, setUserMessage] = useState("");
 
-  // Terms (backend requires acceptTerms: true)
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -92,11 +88,7 @@ export default function BorrowItem() {
       <BorrowDetails item={item} />
 
       {/* Calendar */}
-      <BorrowCalendar
-        item={item}
-        dates={dates}
-        setDates={setDates}
-      />
+      <BorrowCalendar item={item} dates={dates} setDates={setDates} />
 
       {/* Quantity */}
       <BorrowQuantity
@@ -111,6 +103,13 @@ export default function BorrowItem() {
         setDeliveryOption={setDeliveryOption}
         address={address}
         setAddress={setAddress}
+      />
+
+      {/* ⭐ Map Preview (just below delivery option) */}
+      <MapPreview
+        latitude={item.latitude}
+        longitude={item.longitude}
+        radius={150}
       />
 
       {/* Payment Options */}
@@ -139,7 +138,7 @@ export default function BorrowItem() {
         deliveryOption={deliveryOption}
       />
 
-      {/* Submit request */}
+      {/* Submit */}
       <BorrowSubmit
         item={item}
         dates={dates}
@@ -154,3 +153,4 @@ export default function BorrowItem() {
     </div>
   );
 }
+

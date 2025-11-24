@@ -13,3 +13,17 @@ body {
   height: 300px; /* you can adjust */
   border-radius: 0.5rem;
 }
+
+/* Fix Leaflet map overlapping navbar */
+.leaflet-pane,
+.leaflet-container,
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 1 !important;
+}
+
+.leaflet-marker-pane,
+.leaflet-shadow-pane,
+.leaflet-overlay-pane {
+  z-index: 2 !important;
+}

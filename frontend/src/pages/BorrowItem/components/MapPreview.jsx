@@ -7,7 +7,7 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
-// fix icon paths (same as other pages)
+// Fix icon paths
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
@@ -27,20 +27,27 @@ function FlyToMarker({ pos }) {
   return null;
 }
 
-export default function MapPreview({ latitude, longitude, radius = 100 }) {
+export default function MapPreview({
+  latitude,
+  longitude,
+  radius = 100,
+  height = "h-300",
+}) {
   const center =
-    latitude && longitude ? [Number(latitude), Number(longitude)] : [20.5937, 78.9629];
+    latitude && longitude
+      ? [Number(latitude), Number(longitude)]
+      : [20.5937, 78.9629];
 
   if (!latitude || !longitude) {
     return (
-      <div className="w-full h-48 rounded border bg-gray-50 flex items-center justify-center text-gray-500">
+      <div className={`w-full ${height} rounded border bg-gray-50 flex items-center justify-center text-gray-500`}>
         Location not available
       </div>
     );
   }
 
   return (
-    <div className="w-full h-48 rounded overflow-hidden border">
+    <div className={`w-full ${height} rounded overflow-hidden border`}>
       <MapContainer center={center} zoom={13} className="w-full h-full">
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
