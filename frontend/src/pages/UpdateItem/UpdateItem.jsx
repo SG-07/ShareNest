@@ -50,7 +50,8 @@ export default function UpdateItem() {
     rules: "",
     unavailableDates: [],
     images: [],
-    tags: [],
+    tags: "",
+    quantity: 1,
   });
 
   // ------------------------------------------------------------
@@ -65,8 +66,14 @@ export default function UpdateItem() {
           ...res.data,
 
           condition: res.data.condition || "GOOD",
+
           images: res.data.imageUrls || [],
-          tags: res.data.tags || [],
+
+          // Convert array → comma string for input field
+          tags: Array.isArray(res.data.tags)
+            ? res.data.tags.join(", ")
+            : "",
+
           unavailableDates: res.data.notAvailable || [],
         });
       } catch (e) {
@@ -89,7 +96,15 @@ export default function UpdateItem() {
       condition: (form.condition || "GOOD").toUpperCase(),
 
       imageUrls: form.images || [],
-      tags: form.tags || [],
+
+      // Convert comma string → array
+      tags:
+        Array.isArray(form.tags)
+          ? form.tags
+          : (form.tags || "")
+              .split(",")
+              .map((t) => t.trim())
+              .filter(Boolean),
 
       latitude: Number(form.latitude),
       longitude: Number(form.longitude),
@@ -123,47 +138,39 @@ export default function UpdateItem() {
   // Confirm update and submit
   // ------------------------------------------------------------
   async function confirmUpdate() {
-  const payload = buildPayload();
+    const payload = buildPayload();
 
-  console.log("📤 SENDING PAYLOAD TO BACKEND:");
-  console.log(JSON.stringify(payload, null, 2));
+    console.log("📤 SENDING PAYLOAD TO BACKEND:");
+    console.log(JSON.stringify(payload, null, 2));
 
-  try {
-    const response = await updateItem(itemId, payload);
+    try {
+      const response = await updateItem(itemId, payload);
 
-    console.log("📥 BACKEND RESPONSE:");
-    console.log(JSON.stringify(response.data, null, 2));
+      console.log("📥 BACKEND RESPONSE:");
+      console.log(JSON.stringify(response.data, null, 2));
 
-    toast.success("Item updated successfully!");
-    navigate(`/items/${itemId}`);
+      toast.success("Item updated successfully!");
+      navigate(`/items/${itemId}`);
+    } catch (err) {
+      console.error("❌ UPDATE FAILED");
+      console.log("Error object:", err);
 
-  } catch (err) {
-    console.error("❌ UPDATE FAILED");
+      if (err.response) {
+        console.log("🔥 BACKEND ERROR RESPONSE DATA:");
+        console.log(JSON.stringify(err.response.data, null, 2));
+        console.log("📛 Status Code:", err.response.status);
+        console.log("📛 Headers:", err.response.headers);
+      } else if (err.request) {
+        console.log("⚠️ No response received from backend:", err.request);
+      } else {
+        console.log("⚠️ Request setup error:", err.message);
+      }
 
-    // Log entire error object
-    console.log("Error object:", err);
-
-    // If backend sent a response
-    if (err.response) {
-      console.log("🔥 BACKEND ERROR RESPONSE DATA:");
-      console.log(JSON.stringify(err.response.data, null, 2));
-
-      console.log("📛 Status Code:", err.response.status);
-      console.log("📛 Headers:", err.response.headers);
-    } else if (err.request) {
-      // No response from backend
-      console.log("⚠️ No response received from backend:", err.request);
-    } else {
-      // Something happened while setting up the request
-      console.log("⚠️ Request setup error:", err.message);
+      toast.error("Update failed. Please try again.");
+    } finally {
+      setShowConfirmModal(false);
     }
-
-    toast.error("Update failed. Please try again.");
-  } finally {
-    setShowConfirmModal(false);
   }
-}
-
 
   if (loading) return <Loading message="Loading item..." />;
   if (error) return <Error message={error} />;
@@ -193,7 +200,7 @@ export default function UpdateItem() {
           </button>
 
           <button
-            onClick={() => navigate(`/item/${itemId}`)}
+            onClick={() => navigate(`/items/${itemId}`)}
             className="flex-1 bg-red-600 text-white py-3 rounded-lg font-semibold"
           >
             Cancel

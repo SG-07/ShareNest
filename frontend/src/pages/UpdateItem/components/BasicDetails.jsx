@@ -5,6 +5,7 @@ export default function BasicDetails({ form, setForm }) {
     <div className="bg-white p-4 shadow rounded-lg space-y-3">
       <h2 className="font-semibold text-lg">Basic Details</h2>
 
+      {/* Name */}
       <input
         className="border p-2 w-full rounded"
         placeholder="Item Name"
@@ -12,6 +13,7 @@ export default function BasicDetails({ form, setForm }) {
         onChange={(e) => setForm({ ...form, name: e.target.value })}
       />
 
+      {/* Description */}
       <textarea
         className="border p-2 w-full rounded"
         placeholder="Description"
@@ -20,6 +22,7 @@ export default function BasicDetails({ form, setForm }) {
         onChange={(e) => setForm({ ...form, description: e.target.value })}
       />
 
+      {/* Category */}
       <input
         className="border p-2 w-full rounded"
         placeholder="Category"
@@ -27,6 +30,20 @@ export default function BasicDetails({ form, setForm }) {
         onChange={(e) => setForm({ ...form, category: e.target.value })}
       />
 
+      {/* ✅ Tags */}
+      <div>
+        <input
+          className="border p-2 w-full rounded"
+          placeholder='Tags (comma-separated: "tools, drill, machine")'
+          value={form.tags}
+          onChange={(e) => setForm({ ...form, tags: e.target.value })}
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Optional — helps improve search results.
+        </p>
+      </div>
+
+      {/* Condition */}
       <select
         className="border p-2 w-full rounded"
         value={form.condition}
