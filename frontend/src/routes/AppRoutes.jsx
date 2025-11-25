@@ -10,6 +10,8 @@ import Signup from "../pages/Signup";
 import BorrowItem from "../pages/BorrowItem/BorrowItem";
 import ProtectedRoute from "./ProtectedRoute";
 import UpdateItem from "../pages/UpdateItem/UpdateItem";
+import ReceivedRequests from "../pages/Requests/ReceivedRequests";
+
 
 // lazy placeholders for pages you can implement next
 const MyRequests = () => (
@@ -27,6 +29,8 @@ const About = () => (
 
 
 export default {
+  // helper wrapper component for protected routes
+  Protected: ({ children }) => <ProtectedRoute>{children}</ProtectedRoute>,
   Home,
   ItemDetails,
   AddItem,
@@ -39,6 +43,6 @@ export default {
   BorrowItem,
   About,
   UpdateItem,
-  // helper wrapper component for protected routes
-  Protected: ({ children }) => <ProtectedRoute>{children}</ProtectedRoute>,
+  ReceivedRequests,
+  
 };

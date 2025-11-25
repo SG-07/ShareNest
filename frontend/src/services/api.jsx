@@ -131,9 +131,25 @@ export const createItem = (payload) =>
    ------------------------- */
 export const createRequest = (itemId, payload) =>
   api.post(`/items/${itemId}/request`, payload);
-export const getMyRequests = () => api.get("/requests/my");
+
+export const getMyRequests = async () => {
+  console.log("[DEBUG][API] → GET /requests/received");
+  const res = await api.get("/requests/received");
+  console.log("[DEBUG][API] Response from backend:", res);
+  return res.data;
+};
+
 export const cancelRequest = (requestId) =>
   api.post(`/requests/${requestId}/cancel`);
+
+/* ---- NEWLY ADDED ---- */
+export const getReceivedRequests = () => api.get("/requests/received");
+
+export const acceptRequest = (id) =>
+  api.post(`/requests/${id}/accept`);
+
+export const rejectRequest = (id) =>
+  api.post(`/requests/${id}/reject`);
 
 /* -------------------------
    Map & Trust
