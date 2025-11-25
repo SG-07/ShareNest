@@ -2,9 +2,11 @@ package com.gangwarsatyam.sharenest.model;
 
 import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Document(collection = "requests")
@@ -32,10 +34,13 @@ public class Request {
     private long requestDate = System.currentTimeMillis();
 
     // --------------------------------------------------------
-    // RENTAL DETAILS (for owner to approve)
+    // RENTAL DETAILS
     // --------------------------------------------------------
     private LocalDate startDate;
     private LocalDate endDate;
+
+    @CreatedDate
+    private LocalDateTime createdAt;   // ✅ Now works
 
     private int days;
     private int quantity;
