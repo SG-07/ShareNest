@@ -54,6 +54,8 @@ public class Item {
     @Builder.Default
     private List<String> tags = new ArrayList<>();
 
+    private String safetyNotes;
+
 
     // ---------------------------------------------------------
     // LOCATION INFO
