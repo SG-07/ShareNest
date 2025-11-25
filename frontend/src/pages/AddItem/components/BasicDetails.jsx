@@ -1,4 +1,3 @@
-// src/components/AddItem/BasicDetails.jsx
 export default function BasicDetails({ form, setField }) {
   return (
     <div className="space-y-4">
@@ -38,12 +37,30 @@ export default function BasicDetails({ form, setField }) {
         />
       </div>
 
+      {/*TAGS (optional) */}
+      <div>
+        <label className="block font-medium mb-1">
+          Tags <span className="text-gray-500 text-sm">(optional)</span>
+        </label>
+        <input
+          type="text"
+          value={form.tags}
+          onChange={(e) => setField("tags", e.target.value)}
+          className="w-full border p-2 rounded"
+          placeholder='e.g. "tools, machine, drill"'
+        />
+
+        <p className="text-xs text-gray-500 mt-1">
+          Add comma-separated tags to improve search results.
+        </p>
+      </div>
+
       {/* Condition */}
       <div>
         <label className="block font-medium mb-1">Condition</label>
         <select
           value={form.condition}
-          onChange={(e) => setField("condition", e.target.value)}    
+          onChange={(e) => setField("condition", e.target.value)}
           className="w-full border p-2 rounded"
         >
           <option value="GOOD">Good</option>
@@ -55,7 +72,7 @@ export default function BasicDetails({ form, setField }) {
         </select>
       </div>
 
-      {/* ✅ Quantity */}
+      {/* Quantity */}
       <div>
         <label className="block font-medium mb-1">Quantity Available</label>
         <input
@@ -67,7 +84,6 @@ export default function BasicDetails({ form, setField }) {
           placeholder="How many items available?"
         />
       </div>
-
     </div>
   );
 }
