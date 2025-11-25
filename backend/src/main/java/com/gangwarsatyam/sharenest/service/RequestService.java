@@ -73,6 +73,7 @@ public class RequestService {
                 .quantity(dto.getQuantity())
                 .deliveryOption(dto.getDeliveryOption())
                 .paymentMethod(dto.getPaymentMethod())
+                .securityDeposit(dto.getSecurityDeposit())
                 .message(dto.getMessage())
                 .imageUrls(dto.getImageUrls())
                 .build();
@@ -121,7 +122,7 @@ public class RequestService {
     }
 
     // -------------------------------------------------------------------------
-    // ACCEPT REQUEST (this is where unavailableDateRanges is updated)
+    // ACCEPT REQUEST
     // -------------------------------------------------------------------------
     public void acceptRequest(String requestId, String ownerId) {
 
@@ -153,7 +154,6 @@ public class RequestService {
 
         item.setNotAvailable(ranges);
 
-        // Item stays available unless quantity-based handling
         item.setAvailable(true);
 
         itemRepo.save(item);

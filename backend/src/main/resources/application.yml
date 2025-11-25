@@ -15,7 +15,7 @@ cloudinary:
 
 jwt:
   secret: ${JWT_SECRET:b8a2871fe35d4a28b2789e6ffd52ffb4d97d4e125c34e98f572b35efbb12c80d}
-  expiration: 86400000  # 24h in ms
+  expiration: 604800000  # 24h in ms
 
 logging:
   level:

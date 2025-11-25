@@ -1,10 +1,13 @@
 package com.gangwarsatyam.sharenest.controller;
 
 import com.gangwarsatyam.sharenest.dto.RequestDto;
+import com.gangwarsatyam.sharenest.dto.ReceivedRequestResponse;
 import com.gangwarsatyam.sharenest.model.Request;
 import com.gangwarsatyam.sharenest.model.User;
+import com.gangwarsatyam.sharenest.model.Item;
 import com.gangwarsatyam.sharenest.service.RequestService;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
+import com.gangwarsatyam.sharenest.repository.ItemRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +27,11 @@ public class RequestController {
 
     private final RequestService requestService;
     private final UserRepository userRepository;
+    private final ItemRepository itemRepository;
 
     @Value("${app.debug:false}")
     private boolean debug;
+
 
     // ----------------------------------------------------
     //  SUBMIT REQUEST
@@ -77,12 +82,65 @@ public class RequestController {
     //  GET REQUESTS RECEIVED (Owner)
     // ----------------------------------------------------
     @GetMapping("/received")
-    public ResponseEntity<List<Request>> receivedRequests(Authentication auth) {
+    public ResponseEntity<List<ReceivedRequestResponse>> receivedRequests(Authentication auth) {
         String ownerId = extractUserId(auth);
 
         if (debug) logger.debug("[RequestController] Fetching received requests for owner {}", ownerId);
 
-        return ResponseEntity.ok(requestService.getRequestsByOwner(ownerId));
+        List<Request> requests = requestService.getRequestsByOwner(ownerId);
+
+        List<ReceivedRequestResponse> response = requests.stream()
+                .map(req -> {
+
+                    // Fetch item
+                    Item item = itemRepository.findById(req.getItemId()).orElse(null);
+
+                    // Fetch borrower
+                    User borrower = userRepository.findById(req.getBorrowerId()).orElse(null);
+
+                    return ReceivedRequestResponse.builder()
+                            .id(req.getId())
+
+                            // ---- Item Summary ----
+                            .item(new ReceivedRequestResponse.ItemSummary(
+                                    item != null ? item.getId() : null,
+                                    item != null ? item.getName() : null,
+                                    item != null && !item.getImageUrls().isEmpty()
+                                            ? item.getImageUrls().get(0)
+                                            : null,
+                                    item != null ? item.getSecurityDeposit() : 0.0
+                            ))
+
+                            // ---- Borrower Summary ----
+                            .borrower(new ReceivedRequestResponse.BorrowerSummary(
+                                    borrower != null ? borrower.getId() : null,
+                                    borrower != null ? borrower.getName() : null,
+                                    borrower != null ? borrower.getTrustScore() : 0.0,
+                                    borrower != null ? borrower.getBorrowCount() : 0
+                            ))
+
+                            // ---- Dates ----
+                            .requestedFrom(req.getStartDate() != null ? req.getStartDate().toString() : null)
+                            .requestedTill(req.getEndDate() != null ? req.getEndDate().toString() : null)
+                            .createdAt(req.getCreatedAt())
+
+                            // ---- Rental & Pricing ----
+                            .deliveryOption(req.getDeliveryOption())
+                            .quantity(req.getQuantity())
+                            .paymentMethod(req.getPaymentMethod())
+                            .message(req.getMessage())
+
+                            .pricing(new ReceivedRequestResponse.Pricing(
+                                    item != null ? item.getPricePerDay() : 0.0,
+                                    req.getDays() * (item != null ? item.getPricePerDay() : 0.0)
+                            ))
+
+                            .status(req.getStatus().name())
+                            .build();
+                })
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 
     // ----------------------------------------------------
