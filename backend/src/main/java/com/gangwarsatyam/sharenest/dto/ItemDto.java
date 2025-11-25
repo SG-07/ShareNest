@@ -36,6 +36,7 @@ public class ItemDto {
 
     private Boolean available;
 
+    private String safetyNotes;
 
     // ---------------------------------------------------------
     // LOCATION

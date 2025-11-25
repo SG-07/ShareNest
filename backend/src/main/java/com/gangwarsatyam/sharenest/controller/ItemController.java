@@ -215,6 +215,7 @@ public class ItemController {
         item.setDescription(dto.getDescription());
         item.setCategory(dto.getCategory());
         item.setCondition(dto.getCondition());
+        item.setSafetyNotes(dto.getSafetyNotes());
 
         item.setLatitude(dto.getLatitude() != null ? dto.getLatitude() : 0.0);
         item.setLongitude(dto.getLongitude() != null ? dto.getLongitude() : 0.0);

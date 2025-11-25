@@ -17,7 +17,7 @@ public class ItemResponse {
     private String description;
     private String ownerId;
     private String category;
-
+    private String safetyNotes;
     private boolean available;
     private boolean deleted;
 
@@ -67,7 +67,7 @@ public class ItemResponse {
         dto.setDescription(item.getDescription());
         dto.setOwnerId(item.getOwnerId());
         dto.setCategory(item.getCategory());
-
+        dto.setSafetyNotes(item.getSafetyNotes());
         dto.setAvailable(item.isAvailable());
         dto.setDeleted(item.isDeleted());
 
