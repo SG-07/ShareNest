@@ -27,7 +27,11 @@ export default function App() {
         {/* Map */}
         <Route path="map" element={<AppRoutes.MapView />} />
 
+        {/* Requests */}
         <Route path="/dashboard/requests/received" element={<AppRoutes.ReceivedRequests />} />
+
+        <Route path="requests/item/:itemId" element={<AppRoutes.RequestsByItem />} />
+
 
         {/* Profile (protected) */}
         <Route

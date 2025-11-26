@@ -11,7 +11,7 @@ import BorrowItem from "../pages/BorrowItem/BorrowItem";
 import ProtectedRoute from "./ProtectedRoute";
 import UpdateItem from "../pages/UpdateItem/UpdateItem";
 import ReceivedRequests from "../pages/Requests/ReceivedRequests";
-
+import RequestsByItem from "../pages/Requests/RequestsByItem";
 
 // lazy placeholders for pages you can implement next
 const MyRequests = () => (
@@ -44,5 +44,6 @@ export default {
   About,
   UpdateItem,
   ReceivedRequests,
+  RequestsByItem,
   
 };
