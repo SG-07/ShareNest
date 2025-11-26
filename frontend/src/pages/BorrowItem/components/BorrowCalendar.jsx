@@ -1,55 +1,109 @@
 // src/pages/BorrowItem/components/BorrowCalendar.jsx
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import "./calendarOverrides.css";
 
 export default function BorrowCalendar({ item, dates, setDates }) {
-  const unavailableRanges = item.unavailableDates || [];
+  const unavailableRanges = item.unavailableDateRanges || [];
 
-  // Convert ranges into individual disabled days
+  // Convert unavailable date ranges → list of disabled days
   const disabledDates = [];
-  unavailableRanges.forEach(([start, end]) => {
-    let current = new Date(start);
-    const last = new Date(end);
+  unavailableRanges.forEach((range) => {
+    const start = new Date(range.start);
+    const end = new Date(range.end);
 
-    while (current <= last) {
-      disabledDates.push(new Date(current).toDateString());
-      current.setDate(current.getDate() + 1);
+    let curr = new Date(start);
+    while (curr <= end) {
+      disabledDates.push(curr.toDateString());
+      curr.setDate(curr.getDate() + 1);
     }
   });
 
   const disableDates = ({ date }) =>
     disabledDates.includes(date.toDateString());
 
-  // Check array vs single date
-  const startDate =
-    Array.isArray(dates) && dates[0] ? dates[0] : null;
-  const endDate =
-    Array.isArray(dates) && dates[1] ? dates[1] : null;
+  const isValidDate = (d) => d instanceof Date && !isNaN(d);
+
+  let startDate = null;
+  let endDate = null;
+
+  if (Array.isArray(dates)) {
+    startDate = isValidDate(dates[0]) ? dates[0] : null;
+    endDate = isValidDate(dates[1]) ? dates[1] : null;
+  } else {
+    startDate = isValidDate(dates) ? dates : null;
+  }
+
+  const normalize = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+  const totalDays =
+    startDate && endDate
+      ? Math.ceil(
+          (normalize(endDate) - normalize(startDate)) / (1000 * 60 * 60 * 24)
+        ) + 1
+      : 0;
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow">
-      <h2 className="font-semibold mb-2">Select Borrow Period</h2>
+    <div className="bg-white p-5 rounded-xl shadow-lg border border-gray-200">
+      <h2 className="font-semibold text-lg mb-4 text-gray-800">
+        Select Borrow Period
+      </h2>
 
-      <Calendar
-        selectRange={true}
-        onChange={setDates}
-        minDate={new Date()}
-        tileDisabled={disableDates}
-      />
+      {/* ➜ Two Column Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* LEFT → Calendar */}
+        <div className="flex justify-center">
+          <Calendar
+            selectRange={true}
+            onChange={setDates}
+            minDate={new Date()}
+            tileDisabled={disableDates}
+            tileClassName={({ date }) => {
+              if (disabledDates.includes(date.toDateString())) {
+                return "unavailable-date";
+              }
+            }}
+          />
+        </div>
 
-      {startDate && (
-        <div className="mt-3 text-sm">
-          <p>
-            <strong>Start:</strong> {startDate.toDateString()}
-          </p>
+        {/* RIGHT → Date Summary */}
+        <div className="bg-gray-50 p-4 border border-gray-200 rounded-lg flex flex-col justify-center">
+          <h3 className="font-semibold text-gray-700 mb-4 text-lg">
+            Selection Summary
+          </h3>
+
+          {!startDate && (
+            <p className="text-gray-500 text-sm">
+              Select a start and end date from the calendar.
+            </p>
+          )}
+
+          {startDate && (
+            <p className="text-gray-700 mb-3">
+              <strong className="text-gray-900">Start Date:</strong>
+              <br />
+              {startDate.toDateString()}
+            </p>
+          )}
 
           {endDate && (
-            <p>
-              <strong>End:</strong> {endDate.toDateString()}
+            <p className="text-gray-700 mb-3">
+              <strong className="text-gray-900">End Date:</strong>
+              <br />
+              {endDate.toDateString()}
+            </p>
+          )}
+
+          {startDate && endDate && (
+            <p className="text-gray-700 mt-3 p-3 text-sm bg-white rounded-md border w-fit shadow-sm">
+              <strong className="text-gray-900">Total Days:</strong>{" "}
+              <span className="text-blue-600 font-semibold">
+                {totalDays} day(s)
+              </span>
             </p>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
