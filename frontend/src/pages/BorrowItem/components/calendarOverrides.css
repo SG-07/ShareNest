@@ -1,0 +1,17 @@
+/* Make unavailable dates red-ish */
+.unavailable-date {
+  background: #ffe5e5 !important;
+  color: #a40000 !important;
+  border-radius: 6px;
+  opacity: 0.7;
+  cursor: not-allowed !important;
+}
+
+/* Prevent hover effect */
+.react-calendar__tile--now.unavailable-date,
+.react-calendar__tile--active.unavailable-date,
+.unavailable-date:hover {
+  background: #ffc9c9 !important;
+  color: #7a0000 !important;
+  cursor: not-allowed !important;
+}

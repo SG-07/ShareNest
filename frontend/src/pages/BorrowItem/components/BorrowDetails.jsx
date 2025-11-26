@@ -25,8 +25,8 @@ export default function BorrowDetails({ item }) {
       <p className="text-lg font-semibold">₹{item.pricePerDay}/day</p>
       <p>Security Deposit: ₹{item.securityDeposit}</p>
       {distance && <p>Distance: {distance} km away</p>}
-      <p>Min Days: {item.minDays}</p>
-      <p>Max Days: {item.maxDays}</p>
+      <p>Min Days: {item.minRentalDays}</p>
+      <p>Max Days: {item.maxRentalDays}</p>
     </div>
   );
 }
