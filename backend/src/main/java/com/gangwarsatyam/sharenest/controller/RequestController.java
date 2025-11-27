@@ -2,6 +2,7 @@ package com.gangwarsatyam.sharenest.controller;
 
 import com.gangwarsatyam.sharenest.dto.RequestDto;
 import com.gangwarsatyam.sharenest.dto.ReceivedRequestResponse;
+import com.gangwarsatyam.sharenest.dto.MyRequestResponse;
 import com.gangwarsatyam.sharenest.model.Request;
 import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.model.Item;
@@ -70,13 +71,71 @@ public class RequestController {
     //  GET MY SENT REQUESTS (Borrower)
     // ----------------------------------------------------
     @GetMapping("/my")
-    public ResponseEntity<List<Request>> myRequests(Authentication auth) {
+    public ResponseEntity<List<MyRequestResponse>> myRequests(Authentication auth) {
         String borrowerId = extractUserId(auth);
 
-        if (debug) logger.debug("[RequestController] Fetching sent (my) requests for borrower {}", borrowerId);
+        List<Request> requests = requestService.getRequestsByBorrower(borrowerId);
 
-        return ResponseEntity.ok(requestService.getRequestsByBorrower(borrowerId));
+        List<MyRequestResponse> response = requests.stream()
+                .map(req -> {
+
+                    Item item = itemRepository.findById(req.getItemId()).orElse(null);
+
+                    double pricePerDay = item != null ? item.getPricePerDay() : 0.0;
+                    double securityDeposit = item != null ? item.getSecurityDeposit() : 0.0;
+
+                    int days = req.getDays();
+                    double subtotal = pricePerDay * days * req.getQuantity();
+                    double deliveryFee = req.getDeliveryFee();
+                    double discount = req.getDiscount();
+                    double tax = req.getTax();
+                    double serviceFee = req.getServiceFee();
+
+                    double totalPrice = subtotal + deliveryFee + tax + serviceFee - discount;
+
+                    return MyRequestResponse.builder()
+                            .id(req.getId())
+
+                            // Item info
+                            .item(new MyRequestResponse.ItemSummary(
+                                    item != null ? item.getId() : null,
+                                    item != null ? item.getName() : null,
+                                    item != null && !item.getImageUrls().isEmpty()
+                                            ? item.getImageUrls().get(0)
+                                            : null,
+                                    pricePerDay,
+                                    securityDeposit
+                            ))
+
+                            // Dates
+                            .requestedFrom(req.getStartDate() != null ? req.getStartDate().toString() : null)
+                            .requestedTill(req.getEndDate() != null ? req.getEndDate().toString() : null)
+
+                            // Status & rental details
+                            .status(req.getStatus().name())
+                            .deliveryOption(req.getDeliveryOption())
+                            .quantity(req.getQuantity())
+                            .paymentMethod(req.getPaymentMethod())
+                            .message(req.getMessage())
+
+                            // Pricing
+                            .days(days)
+                            .pricePerDay(pricePerDay)
+                            .securityDeposit(securityDeposit)
+                            .deliveryFee(deliveryFee)
+                            .subtotal(subtotal)
+                            .discount(discount)
+                            .tax(tax)
+                            .serviceFee(serviceFee)
+                            .totalPrice(totalPrice)
+
+                            .build();
+                })
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
+
 
     // ----------------------------------------------------
     //  GET REQUESTS RECEIVED (Owner)

@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
+import java.time.temporal.ChronoUnit;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,21 +61,54 @@ public class RequestService {
             throw new RuntimeException("End date cannot be before start date.");
         }
 
-        // Build request
+        int quantity = dto.getQuantity();
+
+        // -------------------------------------
+        // PRICE CALCULATION
+        // -------------------------------------
+        int days = (int) ChronoUnit.DAYS.between(startDate, endDate);
+
+        double pricePerDay = item.getPricePerDay();
+        double securityDeposit = item.getSecurityDeposit();
+
+        double subtotal = pricePerDay * quantity * days;
+        double discount = 0;
+        double tax = subtotal * 0.05;
+        double serviceFee = subtotal * 0.02;
+        double deliveryFee = dto.getDeliveryOption().equals("HOME_DELIVERY") ? 50 : 0;
+
+        double totalPrice = subtotal + tax + serviceFee + deliveryFee - discount;
+
+        // -------------------------------------
+        // Build Request
+        // -------------------------------------
         Request req = Request.builder()
                 .itemId(item.getId())
                 .borrowerId(borrowerId)
                 .ownerId(item.getOwnerId())
                 .status(RequestStatus.PENDING)
+
                 .startDate(startDate)
                 .endDate(endDate)
-                .days(dto.getDays())
-                .quantity(dto.getQuantity())
+                .days(days)
+
+                .pricePerDay(pricePerDay)
+                .securityDeposit(securityDeposit)
+
+                .quantity(quantity)
                 .deliveryOption(dto.getDeliveryOption())
                 .paymentMethod(dto.getPaymentMethod())
-                .securityDeposit(dto.getSecurityDeposit())
                 .message(dto.getMessage())
                 .imageUrls(dto.getImageUrls())
+
+                // Pricing breakdown saved in DB
+                .subtotal(subtotal)
+                .discount(discount)
+                .tax(tax)
+                .serviceFee(serviceFee)
+                .deliveryFee(deliveryFee)
+                .totalPrice(totalPrice)
+
                 .build();
 
         Request saved = requestRepo.save(req);
