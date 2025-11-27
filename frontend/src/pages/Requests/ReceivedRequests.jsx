@@ -65,6 +65,7 @@ export default function ReceivedRequests() {
             const pending = g.requests.filter(r => r.status === "PENDING").length;
             const accepted = g.requests.filter(r => r.status === "ACCEPTED").length;
             const rejected = g.requests.filter(r => r.status === "REJECTED").length;
+            const canceled = g.requests.filter(r => r.status === "CANCELED").length;
 
             return (
               <div
@@ -85,6 +86,7 @@ export default function ReceivedRequests() {
                     <p>Pending: {pending}</p>
                     <p>Accepted: {accepted}</p>
                     <p>Rejected: {rejected}</p>
+                    <p>Canceled: {canceled}</p>
 
                     <button
                       onClick={() => navigate(`/requests/item/${g.itemId}`, { state: g })}
