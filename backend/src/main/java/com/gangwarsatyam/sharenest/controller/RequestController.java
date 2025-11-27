@@ -221,7 +221,7 @@ public class RequestController {
     // ----------------------------------------------------
     //  DECLINE REQUEST (Owner)
     // ----------------------------------------------------
-    @PostMapping("/{requestId}/decline")
+    @PostMapping("/{requestId}/reject")
     public ResponseEntity<Void> declineRequest(
             @PathVariable String requestId,
             Authentication auth

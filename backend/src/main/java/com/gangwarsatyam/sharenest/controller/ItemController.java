@@ -133,6 +133,33 @@ public class ItemController {
     }
 
     // ----------------------------------------------------
+// ACTIVATE / DEACTIVATE ITEM (Toggle "deleted")
+// ----------------------------------------------------
+    @PatchMapping("/{id}/toggle")
+    public ResponseEntity<ItemResponse> toggleItemActiveStatus(
+            @PathVariable String id,
+            Authentication auth
+    ) {
+        String username = extractUsername(auth);
+
+        if (debug) logger.debug("[ItemController] toggleItemActiveStatus() called for id={} by '{}'", id, username);
+
+        Item updated;
+        try {
+            updated = itemService.toggleItemActiveStatus(id, username);
+        } catch (RuntimeException ex) {
+            logger.error("[ItemController] toggleItemActiveStatus() failed for id={}, user={}, error={}",
+                    id, username, ex.getMessage(), ex);
+            throw ex;
+        }
+
+        if (debug) logger.debug("[ItemController] toggleItemActiveStatus() succeeded. New deleted={} for id={}",
+                updated.isDeleted(), id);
+
+        return ResponseEntity.ok(ItemResponse.fromEntity(updated));
+    }
+
+    // ----------------------------------------------------
     // DELETE ITEM
     // ----------------------------------------------------
     @DeleteMapping("/{id}")
