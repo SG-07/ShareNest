@@ -77,7 +77,7 @@ export default function BorrowSubmit({
       toast.success("Borrow request submitted!", { autoClose: 2500 });
 
       setTimeout(() => {
-        navigate("/requests");
+        navigate("/dashboard/requests/sent");
       }, 1200);
     } catch (err) {
       console.error("❌ Request Error:", err);

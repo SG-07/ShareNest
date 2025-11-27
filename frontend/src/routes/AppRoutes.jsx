@@ -12,11 +12,12 @@ import ProtectedRoute from "./ProtectedRoute";
 import UpdateItem from "../pages/UpdateItem/UpdateItem";
 import ReceivedRequests from "../pages/Requests/ReceivedRequests";
 import RequestsByItem from "../pages/Requests/RequestsByItem";
+import MyRequests from "../pages/Requests/MyRequests";
 
 // lazy placeholders for pages you can implement next
-const MyRequests = () => (
-  <div className="max-w-7xl mx-auto p-6">My Requests (coming soon)</div>
-);
+// const MyRequests = () => (
+//   <div className="max-w-7xl mx-auto p-6">My Requests (coming soon)</div>
+// );
 const MapView = () => (
   <div className="max-w-7xl mx-auto p-6">Map View (coming soon)</div>
 );
