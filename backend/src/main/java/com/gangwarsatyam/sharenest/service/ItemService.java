@@ -7,7 +7,6 @@ import com.gangwarsatyam.sharenest.dto.RequestDto;
 import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.repository.ItemRepository;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
-import com.gangwarsatyam.sharenest.service.RequestService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,12 +14,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
+import com.gangwarsatyam.sharenest.exception.NotFoundException;
+import com.gangwarsatyam.sharenest.exception.UnauthorizedException;
+import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class ItemService {
@@ -182,6 +183,44 @@ public class ItemService {
         if (debug) logger.debug("[ItemService] Item updated: {} (by user {})", saved.getId(), username);
         return saved;
     }
+
+    // ---------------------------------------------------------
+// Toggle Activate / Deactivate item
+// ---------------------------------------------------------
+    public Item toggleItemActiveStatus(String itemId, String username) {
+
+        logger.debug("Toggling active/deleted state for item {} by user {}", itemId, username);
+
+        // 1️⃣ Fetch the user by username (because item stores ownerId = userId)
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        // 2️⃣ Fetch item
+        Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Item not found"));
+
+        // 3️⃣ Validate owner — compare userId with item.ownerId
+        if (!item.getOwnerId().equals(user.getId())) {
+            throw new UnauthorizedException("You are not allowed to modify this item");
+        }
+
+        // 4️⃣ Toggle deleted flag
+        boolean newState = !item.isDeleted();
+        item.setDeleted(newState);
+
+        // 5️⃣ Optionally toggle availability
+        // If the item is deleted, we should make it unavailable
+        item.setAvailable(!newState);
+
+        logger.debug("Item {} new deleted state = {}, available = {}", itemId, newState, item.isAvailable());
+
+        // 6️⃣ Update timestamp
+        item.setUpdatedAt(Instant.now());
+
+        return itemRepository.save(item);
+    }
+
+
 
     // ---------------------------------------------------------
     // DELETE
