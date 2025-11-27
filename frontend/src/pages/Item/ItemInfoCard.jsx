@@ -11,12 +11,12 @@ export default function ItemInfoCard({ item }) {
   // Support both real item objects and grouped-requests objects
   const mainImage =
     item.image ||
-    item.itemImage ||              // from grouped response
+    item.itemImage ||              
     "/placeholder-item.png";
 
   const itemName =
     item.name ||
-    item.itemName ||              // from grouped response
+    item.itemName ||             
     "Unnamed Item";
 
   const securityDeposit =

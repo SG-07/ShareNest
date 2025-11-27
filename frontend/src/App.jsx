@@ -30,6 +30,8 @@ export default function App() {
         {/* Requests */}
         <Route path="/dashboard/requests/received" element={<AppRoutes.ReceivedRequests />} />
 
+        <Route path="/dashboard/requests/sent" element={<AppRoutes.MyRequests />} />
+
         <Route path="requests/item/:itemId" element={<AppRoutes.RequestsByItem />} />
 
 
