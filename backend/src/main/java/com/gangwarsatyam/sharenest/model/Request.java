@@ -40,7 +40,7 @@ public class Request {
     private LocalDate endDate;
 
     @CreatedDate
-    private LocalDateTime createdAt;   // ✅ Now works
+    private LocalDateTime createdAt;
 
     private int days;
     private int quantity;
