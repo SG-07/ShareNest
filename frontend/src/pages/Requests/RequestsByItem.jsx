@@ -32,6 +32,13 @@ export default function RequestsByItem() {
     });
   };
 
+  // ⭐ SORT REQUESTS — PENDING FIRST
+  const sortedRequests = [...requests].sort((a, b) => {
+    if (a.status === "PENDING" && b.status !== "PENDING") return -1;
+    if (a.status !== "PENDING" && b.status === "PENDING") return 1;
+    return 0; // keep non-pending order unchanged
+  });
+
   async function handleAccept(id) {
     try {
       toast.info(`Accepting request ${id}...`);
@@ -66,13 +73,15 @@ export default function RequestsByItem() {
       </h2>
 
       <div className="space-y-4">
-        {requests.length === 0 ? (
+        {sortedRequests.length === 0 ? (
           <p className="text-gray-500">No requests for this item yet.</p>
         ) : (
-          requests.map((req) => (
+          sortedRequests.map((req) => (
             <div
               key={req.id}
-              className="border p-4 rounded-lg bg-white shadow-sm"
+              className={`border p-4 rounded-lg bg-white shadow-sm ${
+                req.status === "PENDING" ? "border-blue-500 shadow-md" : ""
+              }`}
             >
               <p>
                 <strong>Borrower:</strong> {req.borrower.name}
@@ -102,13 +111,15 @@ export default function RequestsByItem() {
               <p className="mt-1 text-gray-600">
                 Price/Day: <strong>₹{req.pricing?.pricePerDay}</strong>
                 {" | "}
+
+                {/* SECURITY DEPOSIT WITH TOOLTIP */}
                 <span className="relative group">
                   Security Deposit:
                   <strong className="text-blue-700">
                     {" "}
                     ₹{req.item.securityDeposit}
                   </strong>
-                  {/* Tooltip */}
+
                   <span
                     className="absolute left-0 top-full mt-1 hidden group-hover:block 
                      bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-10"
@@ -117,11 +128,12 @@ export default function RequestsByItem() {
                     damaged.
                   </span>
                 </span>
+
                 {" | "}
                 Total Price: <strong>₹{req.pricing?.totalPrice}</strong>
               </p>
 
-              {/* ACTIONS */}
+              {/* ACTION BUTTONS */}
               <div className="mt-3 flex gap-2">
                 {req.status === "PENDING" ? (
                   <>
@@ -146,6 +158,10 @@ export default function RequestsByItem() {
                 ) : req.status === "REJECTED" ? (
                   <span className="px-3 py-1 bg-red-100 text-red-700 rounded">
                     Rejected
+                  </span>
+                ) : req.status === "CANCELLED" ? (
+                  <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded">
+                    Cancelled
                   </span>
                 ) : null}
               </div>

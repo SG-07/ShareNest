@@ -109,7 +109,7 @@ export const uploadImage = async (file) => {
   const res = await axios.post(url, data);
   devLog("API", "Image uploaded", res.data.secure_url);
 
-  return res.data.secure_url; 
+  return res.data.secure_url;
 };
 
 /* -------------------------
@@ -126,6 +126,11 @@ export const createItem = (payload) =>
     headers: { "Content-Type": "application/json" },
   });
 
+export const toggleItemStatus = (id) => api.patch(`/items/${id}/toggle`);
+
+export const deleteItem = (id) => api.delete(`/item/${id}`);
+
+
 /* -------------------------
    Borrow/Requests
    ------------------------- */
@@ -139,11 +144,9 @@ export const cancelRequest = (requestId) =>
 
 export const getReceivedRequests = () => api.get("/requests/received");
 
-export const acceptRequest = (id) =>
-  api.post(`/requests/${id}/accept`);
+export const acceptRequest = (id) => api.post(`/requests/${id}/accept`);
 
-export const rejectRequest = (id) =>
-  api.post(`/requests/${id}/reject`);
+export const rejectRequest = (id) => api.post(`/requests/${id}/reject`);
 
 /* -------------------------
    Map & Trust
