@@ -4,9 +4,11 @@ import com.gangwarsatyam.sharenest.model.Item;
 import com.gangwarsatyam.sharenest.model.ItemCondition;
 import com.gangwarsatyam.sharenest.model.Request;
 import com.gangwarsatyam.sharenest.dto.RequestDto;
+import com.gangwarsatyam.sharenest.dto.BorrowedItemResponse;
 import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.repository.ItemRepository;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
+import com.gangwarsatyam.sharenest.repository.RequestRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +23,6 @@ import java.util.List;
 import java.util.Objects;
 import com.gangwarsatyam.sharenest.exception.NotFoundException;
 import com.gangwarsatyam.sharenest.exception.UnauthorizedException;
-import java.time.LocalDateTime;
 @Service
 @RequiredArgsConstructor
 public class ItemService {
@@ -31,6 +32,7 @@ public class ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
     private final RequestService requestService;
+    private final RequestRepository requestRepository;
 
     @Value("${app.debug:false}")
     private boolean debug;
@@ -221,6 +223,29 @@ public class ItemService {
     }
 
 
+    public List<BorrowedItemResponse> getMyBorrowedItems(String username) {
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+
+        // ✔ Correct repository method
+        List<Request> requests = requestRepository.findByBorrowerId(user.getId());
+
+        List<BorrowedItemResponse> result = new ArrayList<>();
+
+        for (Request req : requests) {
+            Item item = itemRepository.findById(req.getItemId()).orElse(null);
+            if (item == null) continue;
+
+            User owner = userRepository.findById(item.getOwnerId()).orElse(null);
+            if (owner == null) continue;
+
+            BorrowedItemResponse res = BorrowedItemResponse.from(item, req, owner);
+            result.add(res);
+        }
+
+        return result;
+    }
 
     // ---------------------------------------------------------
     // DELETE
