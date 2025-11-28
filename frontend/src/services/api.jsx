@@ -130,6 +130,9 @@ export const toggleItemStatus = (id) => api.patch(`/items/${id}/toggle`);
 
 export const deleteItem = (id) => api.delete(`/item/${id}`);
 
+export const getMyItems = () => api.get("/items/my");
+
+export const getBorrowedItems = () => api.get("/items/my/borrowed");
 
 /* -------------------------
    Borrow/Requests

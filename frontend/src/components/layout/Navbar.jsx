@@ -20,8 +20,8 @@ export default function Navbar() {
   ];
 
   const dashboardLinks = [
-    { to: "/dashboard/my-items", label: "My Items" },
-    { to: "/dashboard/borrowed-items", label: "Items I Borrowed" },
+    { to: "/dashboard/requests/my-items", label: "My Items" },
+  { to: "/dashboard/requests/borrowed-items", label: "Items I Borrowed" },
     { to: "/dashboard/requests/received", label: "Requests Received" },
     { to: "/dashboard/requests/sent", label: "Requests I Made" },
   ];
