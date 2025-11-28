@@ -38,3 +38,5 @@ application.yml
 # Optional: ignore other env-specific configs
 application-dev.yml
 application-prod.yml
+
+src/main/resources

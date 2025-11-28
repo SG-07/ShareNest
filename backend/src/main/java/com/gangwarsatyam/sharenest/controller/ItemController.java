@@ -3,6 +3,7 @@ package com.gangwarsatyam.sharenest.controller;
 import com.gangwarsatyam.sharenest.dto.ItemDto;
 import com.gangwarsatyam.sharenest.model.Request;
 import com.gangwarsatyam.sharenest.dto.RequestDto;
+import com.gangwarsatyam.sharenest.dto.BorrowedItemResponse;
 import com.gangwarsatyam.sharenest.dto.ItemResponse;
 import com.gangwarsatyam.sharenest.exception.BadRequestException;
 import com.gangwarsatyam.sharenest.model.Item;
@@ -230,6 +231,25 @@ public class ItemController {
         String username = auth.getName();
         Request req = itemService.requestItem(itemId, dto, username);
         return ResponseEntity.ok(req);
+    }
+
+
+    // ----------------------------------------------------
+// GET ITEMS BORROWED BY ME
+// ----------------------------------------------------
+    @GetMapping("/my/borrowed")
+    public ResponseEntity<List<BorrowedItemResponse>> getMyBorrowedItems(Authentication auth) {
+
+        String username = extractUsername(auth);
+
+        if (debug) logger.debug("[ItemController] getMyBorrowedItems() called by '{}'", username);
+
+        List<BorrowedItemResponse> list = itemService.getMyBorrowedItems(username);
+
+        if (debug) logger.debug("[ItemController] getMyBorrowedItems() returned {} borrowed items for '{}'",
+                list.size(), username);
+
+        return ResponseEntity.ok(list);
     }
 
     // ----------------------------------------------------
