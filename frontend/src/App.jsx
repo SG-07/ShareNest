@@ -34,6 +34,11 @@ export default function App() {
 
         <Route path="requests/item/:itemId" element={<AppRoutes.RequestsByItem />} />
 
+        <Route path="/dashboard/requests/my-items" element={<AppRoutes.MyItems/>} />
+
+        <Route path="/dashboard/requests/borrowed-items" element={<AppRoutes.BorrowedItems />} />
+
+
 
         {/* Profile (protected) */}
         <Route

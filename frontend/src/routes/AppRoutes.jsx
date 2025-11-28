@@ -13,6 +13,10 @@ import UpdateItem from "../pages/UpdateItem/UpdateItem";
 import ReceivedRequests from "../pages/Requests/ReceivedRequests";
 import RequestsByItem from "../pages/Requests/RequestsByItem";
 import MyRequests from "../pages/Requests/MyRequests";
+import MyItems from "../pages/MyItems";
+import BorrowedItems from "../pages/BorrowItem/BorrowedItems";
+
+
 
 // lazy placeholders for pages you can implement next
 // const MyRequests = () => (
@@ -46,5 +50,7 @@ export default {
   UpdateItem,
   ReceivedRequests,
   RequestsByItem,
+  MyItems,
+  BorrowedItems,
   
 };
