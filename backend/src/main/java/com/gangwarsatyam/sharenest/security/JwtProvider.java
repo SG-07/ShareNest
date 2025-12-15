@@ -18,7 +18,7 @@ public class JwtProvider {
 
     public JwtProvider(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") long expiration
+            @Value("${jwt.expiration:604800000}") long expiration
     ) {
         byte[] keyBytes;
 
