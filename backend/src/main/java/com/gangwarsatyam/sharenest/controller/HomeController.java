@@ -16,11 +16,9 @@ public class HomeController {
 
     @GetMapping("/")
     public ResponseEntity<Void> redirectToFrontend() {
-        // Use the first frontend URL from the list
-        String frontendUrl = appProperties.getFrontendUrl().get(0);
-
-        return ResponseEntity.status(302)
-                .header("Location", frontendUrl)
+        return ResponseEntity
+                .status(302)
+                .header("Location", appProperties.getFrontendUrl())
                 .build();
     }
 }

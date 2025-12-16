@@ -1,18 +1,19 @@
 package com.gangwarsatyam.sharenest.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import java.util.List;
+import org.springframework.stereotype.Component;
 
+@Component
 @ConfigurationProperties(prefix = "app")
 public class AppProperties {
 
-    private List<String> frontendUrl;
+    private String frontendUrl;
 
-    public List<String> getFrontendUrl() {
+    public String getFrontendUrl() {
         return frontendUrl;
     }
 
-    public void setFrontendUrl(List<String> frontendUrl) {
+    public void setFrontendUrl(String frontendUrl) {
         this.frontendUrl = frontendUrl;
     }
 }
