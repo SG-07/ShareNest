@@ -12,6 +12,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -19,7 +20,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @Slf4j
@@ -31,8 +31,12 @@ public class SecurityConfig {
     private final AppProperties appProperties;
     private final JwtFilter jwtFilter;
 
-    public SecurityConfig(JwtProvider jwtProvider, UserRepository userRepository,
-                          AppProperties appProperties, JwtFilter jwtFilter) {
+    public SecurityConfig(
+            JwtProvider jwtProvider,
+            UserRepository userRepository,
+            AppProperties appProperties,
+            JwtFilter jwtFilter
+    ) {
         this.jwtProvider = jwtProvider;
         this.userRepository = userRepository;
         this.appProperties = appProperties;
@@ -41,15 +45,19 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         http
                 .csrf(csrf -> csrf.disable())
 
                 .authorizeHttpRequests(auth -> auth
-                        // ----------------------------------------
+                        // -----------------------------
                         // PUBLIC ENDPOINTS
-                        // ----------------------------------------
+                        // -----------------------------
                         .requestMatchers("/", "/healthz").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/signup", "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/signup",
+                                "/api/auth/login"
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/auth/check-username",
                                 "/api/auth/check-email"
@@ -60,23 +68,23 @@ public class SecurityConfig {
                                 "/api/map-items"
                         ).permitAll()
 
-                        // ----------------------------------------
-                        // PROTECTED ITEM ENDPOINTS
-                        // ----------------------------------------
-
+                        // -----------------------------
+                        // PROTECTED ENDPOINTS
+                        // -----------------------------
                         .requestMatchers(HttpMethod.POST, "/api/items").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/items/{itemId}/request").authenticated()
                         .requestMatchers(HttpMethod.PATCH, "/api/items/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/items/**").hasAnyRole("USER", "ADMIN")
 
-                        // ----------------------------------------
+                        // -----------------------------
                         // EVERYTHING ELSE
-                        // ----------------------------------------
+                        // -----------------------------
                         .anyRequest().authenticated()
                 )
 
                 .sessionManagement(session ->
-                        session.sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.STATELESS))
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
 
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
 
@@ -86,13 +94,19 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // -----------------------------
+    // AUTHENTICATION
+    // -----------------------------
+
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(CustomUserDetailsService customUserDetailsService) {
+    public AuthenticationProvider authenticationProvider(
+            CustomUserDetailsService customUserDetailsService
+    ) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(customUserDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
@@ -100,21 +114,36 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration
+    ) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
+    // -----------------------------
+    // CORS CONFIGURATION (FIXED)
+    // -----------------------------
+
     @Bean
     public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
 
-        config.setAllowedOriginPatterns(appProperties.getFrontendUrl());
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+
+        config.setAllowedOriginPatterns(
+                List.of(appProperties.getFrontendUrl())
+        );
+
+        config.setAllowedMethods(
+                List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+        );
         config.setAllowedHeaders(List.of("*"));
 
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+
         return new CorsFilter(source);
     }
 }
