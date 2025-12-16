@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -20,9 +21,14 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.io.IOException;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
-@Slf4j
+@ConditionalOnProperty(
+        name = "jwt.filter.enabled",
+        havingValue = "true",
+        matchIfMissing = true // filter is ON unless explicitly disabled
+)
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
@@ -46,7 +52,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
             if (StringUtils.hasText(token)) {
 
-                // Validate token
                 boolean valid = jwtProvider.validate(token);
                 log.debug("[JwtFilter] Token validation result: {}", valid);
 

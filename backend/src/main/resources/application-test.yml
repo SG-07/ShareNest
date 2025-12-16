@@ -1,0 +1,10 @@
+app:
+  frontend-url:
+    - http://localhost:5173
+
+
+de:
+  flapdoodle:
+    mongodb:
+      embedded:
+        version: 7.0.1
