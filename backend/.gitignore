@@ -40,3 +40,5 @@ application-dev.yml
 application-prod.yml
 
 src/main/resources
+
+.env
