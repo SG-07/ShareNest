@@ -130,10 +130,15 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
 
+        String frontendUrl = appProperties.getFrontendUrl();
 
-        config.setAllowedOriginPatterns(
-                List.of(appProperties.getFrontendUrl())
-        );
+        if (frontendUrl != null && !frontendUrl.isBlank()) {
+            log.info("CORS allowed origin set to: {}", frontendUrl);
+            config.setAllowedOriginPatterns(List.of(frontendUrl));
+        } else {
+            log.warn("FRONTEND_URL not set. Falling back to allow all origins.");
+            config.setAllowedOriginPatterns(List.of("*"));
+        }
 
         config.setAllowedMethods(
                 List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
