@@ -41,10 +41,18 @@ public class SecurityConfig {
         this.userRepository = userRepository;
         this.appProperties = appProperties;
         this.jwtFilter = jwtFilter;
+
+        log.info("[SecurityConfig] Initialized");
     }
+
+    // -----------------------------
+    // SECURITY FILTER CHAIN
+    // -----------------------------
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
+        log.debug("[SecurityConfig] Building SecurityFilterChain");
 
         http
                 .csrf(csrf -> csrf.disable())
@@ -91,6 +99,9 @@ public class SecurityConfig {
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable());
 
+        log.debug("[SecurityConfig] JWT filter registered before UsernamePasswordAuthenticationFilter");
+        log.info("[SecurityConfig] SecurityFilterChain successfully configured");
+
         return http.build();
     }
 
@@ -100,6 +111,7 @@ public class SecurityConfig {
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
+        log.debug("[SecurityConfig] BCryptPasswordEncoder bean created");
         return new BCryptPasswordEncoder();
     }
 
@@ -107,9 +119,13 @@ public class SecurityConfig {
     public AuthenticationProvider authenticationProvider(
             CustomUserDetailsService customUserDetailsService
     ) {
+        log.debug("[SecurityConfig] Configuring DaoAuthenticationProvider");
+
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(customUserDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
+
+        log.info("[SecurityConfig] AuthenticationProvider configured using CustomUserDetailsService");
         return provider;
     }
 
@@ -117,26 +133,30 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration configuration
     ) throws Exception {
+        log.debug("[SecurityConfig] Creating AuthenticationManager");
         return configuration.getAuthenticationManager();
     }
 
     // -----------------------------
-    // CORS CONFIGURATION (FIXED)
+    // CORS CONFIGURATION
     // -----------------------------
 
     @Bean
     public CorsFilter corsFilter() {
 
+        log.debug("[SecurityConfig] Configuring CORS");
+
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
 
         String frontendUrl = appProperties.getFrontendUrl();
+        log.debug("[SecurityConfig] FRONTEND_URL value = {}", frontendUrl);
 
         if (frontendUrl != null && !frontendUrl.isBlank()) {
-            log.info("CORS allowed origin set to: {}", frontendUrl);
+            log.info("[CORS] Allowed origin set to: {}", frontendUrl);
             config.setAllowedOriginPatterns(List.of(frontendUrl));
         } else {
-            log.warn("FRONTEND_URL not set. Falling back to allow all origins.");
+            log.warn("[CORS] FRONTEND_URL not set. Falling back to allow all origins (*)");
             config.setAllowedOriginPatterns(List.of("*"));
         }
 
@@ -148,6 +168,8 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source =
                 new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+
+        log.info("[CORS] CORS filter registered successfully");
 
         return new CorsFilter(source);
     }
