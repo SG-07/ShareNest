@@ -25,6 +25,8 @@ public class User {
 
     private String name;
 
+    private City city;
+
     private double trustScore = 0.0;
 
     private int lendCount = 0;

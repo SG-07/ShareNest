@@ -1,8 +1,9 @@
 package com.gangwarsatyam.sharenest.service;
 
+import com.gangwarsatyam.sharenest.dto.AuthResponse;
 import com.gangwarsatyam.sharenest.dto.UserDto;
 import com.gangwarsatyam.sharenest.dto.UserRegistrationDto;
-import com.gangwarsatyam.sharenest.dto.AuthResponse;
+import com.gangwarsatyam.sharenest.model.City;
 import com.gangwarsatyam.sharenest.model.User;
 import com.gangwarsatyam.sharenest.repository.UserRepository;
 import com.gangwarsatyam.sharenest.security.JwtProvider;
@@ -33,11 +34,15 @@ public class AuthService {
             throw new RuntimeException("Email already taken");
         }
 
+        // 🔹 Parse & validate city
+        City city = parseCity(dto.getCity());
+
         User user = User.builder()
                 .username(dto.getUsername())
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .email(dto.getEmail())
                 .name(dto.getName())
+                .city(city)
                 .roles(Collections.singletonList("ROLE_USER"))
                 .build();
 
@@ -75,5 +80,22 @@ public class AuthService {
                 user.getTrustScore(),
                 user.getRoles()
         );
+    }
+
+    private City parseCity(String city) {
+        if (city == null || city.isBlank()) {
+            throw new IllegalArgumentException("City is required");
+        }
+
+        String normalized = city
+                .trim()
+                .toUpperCase()
+                .replace(" ", "_");
+
+        try {
+            return City.valueOf(normalized);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Service not available in this city");
+        }
     }
 }
