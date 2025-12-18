@@ -106,7 +106,7 @@ public class JwtFilter extends OncePerRequestFilter {
             return bearer.substring(7);
         }
 
-        log.warn("[JwtFilter] Authorization header missing or does not start with 'Bearer '");
+        log.debug("[JwtFilter] Authorization header missing or does not start with 'Bearer '");
         return null;
     }
 }
